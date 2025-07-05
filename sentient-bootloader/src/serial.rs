@@ -111,6 +111,7 @@ pub fn init_serial() {
     }
 }
 
+#[allow(dead_code)]
 pub fn log_serial(msg: &str) {
     #[cfg(feature = "serial-debug")]
     {
