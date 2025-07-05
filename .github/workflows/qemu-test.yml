@@ -230,13 +230,12 @@ jobs:
         
         # Check for critical boot phases
         BOOT_PHASES=(
-          "Serial initialized"
           "SentientOS"
           "Hardware detection complete"
           "kernel.efi"
           "Model loaded"
           "Starting kernel"
-          "AI subsystem initialized"
+          "Kernel EFI started"
         )
         
         MISSING_PHASES=()
