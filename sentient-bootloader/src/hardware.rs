@@ -81,14 +81,12 @@ fn get_cpu_vendor() -> String {
 }
 
 fn scan_pci_for_gpus(_boot_services: &BootServices) -> Vec<GpuDevice> {
-    let mut devices = Vec::new();
-
-    devices.push(GpuDevice {
+    let devices = alloc::vec![GpuDevice {
         vendor_id: 0x10DE,
         device_id: 0x2684,
         name: String::from("NVIDIA RTX 4090"),
         memory_mb: 24576,
-    });
+    }];
 
     devices
 }
@@ -104,8 +102,7 @@ fn get_total_memory(boot_services: &BootServices) -> u64 {
     let map_size = boot_services.memory_map_size();
     // Add extra space to buffer for descriptor alignment
     let buffer_size = map_size.map_size + 8 * map_size.entry_size;
-    let mut buffer = Vec::with_capacity(buffer_size);
-    buffer.resize(buffer_size, 0);
+    let mut buffer = alloc::vec![0; buffer_size];
 
     match boot_services.memory_map(&mut buffer) {
         Ok(map) => map

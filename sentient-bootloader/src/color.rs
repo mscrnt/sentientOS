@@ -54,7 +54,7 @@ pub fn print_phase(stdout: &mut Output, phase: Phase, message: &str) {
 
     stdout.reset(false).unwrap();
 
-    let msg_str = alloc::format!("{}\r\n", message);
+    let msg_str = alloc::format!("{message}\r\n");
     let msg_u16 = crate::str_to_cstr16(&msg_str);
     let msg_cstr = CStr16::from_u16_with_nul(&msg_u16).unwrap();
     stdout.output_string(msg_cstr).unwrap();

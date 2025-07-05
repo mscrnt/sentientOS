@@ -45,17 +45,17 @@ pub fn validate_and_prepare(
 
     let checksum = calculate_checksum(&model_data);
 
-    let pages_needed = (model_data.len() + 4095) / 4096;
+    let pages_needed = model_data.len().div_ceil(4096);
     let memory_address = boot_services
         .allocate_pages(AllocateType::AnyPages, MemoryType::RESERVED, pages_needed)
-        .map_err(|_| Status::OUT_OF_RESOURCES)? as u64;
+        .map_err(|_| Status::OUT_OF_RESOURCES)?;
 
     unsafe {
         let dest = memory_address as *mut u8;
         core::ptr::copy_nonoverlapping(model_data.as_ptr(), dest, model_data.len());
     }
 
-    info!("Model loaded at address: 0x{:016x}", memory_address);
+    info!("Model loaded at address: 0x{memory_address:016x}");
     serial_println!(
         "💾 Model loaded at: 0x{:016x} ({} pages)",
         memory_address,
@@ -83,7 +83,7 @@ fn calculate_checksum(data: &[u8]) -> String {
 
     let mut checksum = String::with_capacity(64);
     for byte in result {
-        checksum.push_str(&alloc::format!("{:02x}", byte));
+        checksum.push_str(&alloc::format!("{byte:02x}"));
     }
 
     checksum

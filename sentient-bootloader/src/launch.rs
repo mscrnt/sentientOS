@@ -48,7 +48,7 @@ pub fn launch_kernel(
                 }
             };
 
-        let args = alloc::format!("bootinfo=0x{:016x}", boot_info_addr);
+        let args = alloc::format!("bootinfo=0x{boot_info_addr:016x}");
         let args_vec = crate::str_to_cstr16(&args);
 
         unsafe {
@@ -70,7 +70,7 @@ pub fn launch_kernel(
             Status::SUCCESS
         }
         Err(e) => {
-            info!("Kernel failed to start: {:?}", e);
+            info!("Kernel failed to start: {e:?}");
             serial_println!("❌ Kernel failed to start: {:?}", e);
             e.status()
         }
@@ -80,7 +80,7 @@ pub fn launch_kernel(
 fn store_boot_info(boot_services: &BootServices, boot_info: BootInfo) -> Result<u64, Status> {
     let serialized = serde_json::to_vec(&boot_info).map_err(|_| Status::OUT_OF_RESOURCES)?;
 
-    let pages_needed = (serialized.len() + 4095) / 4096;
+    let pages_needed = serialized.len().div_ceil(4096);
     let address = boot_services
         .allocate_pages(
             uefi::table::boot::AllocateType::AnyPages,
@@ -94,7 +94,7 @@ fn store_boot_info(boot_services: &BootServices, boot_info: BootInfo) -> Result<
         core::ptr::copy_nonoverlapping(serialized.as_ptr(), dest, serialized.len());
     }
 
-    info!("BootInfo stored at: 0x{:016x}", address);
+    info!("BootInfo stored at: 0x{address:016x}");
     serial_println!(
         "📦 BootInfo stored at: 0x{:016x} ({} bytes)",
         address,

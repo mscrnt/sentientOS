@@ -52,7 +52,7 @@ fn main(image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
 
     print_phase(stdout, Phase::Ai, "Detecting AI hardware capabilities...");
     let hw_info = hardware::detect_hardware(boot_services);
-    info!("Hardware detection complete: {:?}", hw_info);
+    info!("Hardware detection complete: {hw_info:?}");
 
     print_phase(stdout, Phase::Load, "Loading AI model and configuration...");
     let esp_volume = match file_loader::get_esp_volume(boot_services) {

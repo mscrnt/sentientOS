@@ -48,16 +48,14 @@ pub fn load_config(
         .unwrap_err()
         .data()
         .unwrap();
-    let mut info_buffer = Vec::<u8>::with_capacity(info_size);
-    info_buffer.resize(info_size, 0);
+    let mut info_buffer = alloc::vec![0; info_size];
 
     let file_info = file
         .get_info::<FileInfo>(&mut info_buffer)
         .map_err(|e| e.status())?;
     let file_size = file_info.file_size() as usize;
 
-    let mut buffer = Vec::<u8>::with_capacity(file_size);
-    buffer.resize(file_size, 0);
+    let mut buffer = alloc::vec![0; file_size];
 
     file.read(&mut buffer).map_err(|e| e.status())?;
 
@@ -65,7 +63,7 @@ pub fn load_config(
     let config: InferenceConfig =
         serde_json::from_str(&config_str).map_err(|_| Status::INVALID_PARAMETER)?;
 
-    info!("Loaded config: {:?}", config);
+    info!("Loaded config: {config:?}");
     serial_println!(
         "📄 Loaded inference config: runtime={:?}, context={}",
         config.runtime,
@@ -98,16 +96,14 @@ pub fn load_model(
         .unwrap_err()
         .data()
         .unwrap();
-    let mut info_buffer = Vec::<u8>::with_capacity(info_size);
-    info_buffer.resize(info_size, 0);
+    let mut info_buffer = alloc::vec![0; info_size];
 
     let file_info = file
         .get_info::<FileInfo>(&mut info_buffer)
         .map_err(|e| e.status())?;
     let file_size = file_info.file_size() as usize;
 
-    let mut buffer = Vec::<u8>::with_capacity(file_size);
-    buffer.resize(file_size, 0);
+    let mut buffer = alloc::vec![0; file_size];
 
     let mut offset = 0;
     while offset < file_size {
@@ -117,7 +113,7 @@ pub fn load_model(
         offset += chunk_size;
     }
 
-    info!("Loaded model: {} bytes", file_size);
+    info!("Loaded model: {file_size} bytes");
     serial_println!(
         "🧠 Loaded AI model: {} bytes from {}",
         file_size,
@@ -144,20 +140,18 @@ pub fn load_kernel(boot_services: &BootServices, esp_handle: &Handle) -> Result<
         .unwrap_err()
         .data()
         .unwrap();
-    let mut info_buffer = Vec::<u8>::with_capacity(info_size);
-    info_buffer.resize(info_size, 0);
+    let mut info_buffer = alloc::vec![0; info_size];
 
     let file_info = file
         .get_info::<FileInfo>(&mut info_buffer)
         .map_err(|e| e.status())?;
     let file_size = file_info.file_size() as usize;
 
-    let mut buffer = Vec::<u8>::with_capacity(file_size);
-    buffer.resize(file_size, 0);
+    let mut buffer = alloc::vec![0; file_size];
 
     file.read(&mut buffer).map_err(|e| e.status())?;
 
-    info!("Loaded kernel: {} bytes", file_size);
+    info!("Loaded kernel: {file_size} bytes");
     serial_println!("🔧 Loaded kernel.efi: {} bytes", file_size);
     Ok(buffer)
 }
