@@ -102,6 +102,8 @@ fn store_boot_info(boot_services: &BootServices, boot_info: BootInfo) -> Result<
     unsafe {
         let dest = address as *mut u8;
         core::ptr::copy_nonoverlapping(serialized.as_ptr(), dest, serialized.len());
+        // Null-terminate the JSON string
+        *dest.add(serialized.len()) = 0;
     }
 
     info!("BootInfo stored at: 0x{address:016x}");

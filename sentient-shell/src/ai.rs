@@ -103,9 +103,12 @@ impl AiClient {
     pub fn get_preferred_model(&self) -> Result<Option<String>> {
         let models = self.list_ollama_models()?;
         
-        // Prefer deepseek-v2 if available
-        if models.iter().any(|m| m.contains("deepseek-v2")) {
-            return Ok(Some("deepseek-v2".to_string()));
+        // Prefer deepseek models if available
+        if let Some(model) = models.iter().find(|m| m.starts_with("deepseek-v2")) {
+            return Ok(Some(model.clone()));
+        }
+        if let Some(model) = models.iter().find(|m| m.starts_with("deepseek-r1")) {
+            return Ok(Some(model.clone()));
         }
         
         // Otherwise use the first available model

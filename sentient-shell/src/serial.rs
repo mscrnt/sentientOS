@@ -3,7 +3,7 @@ use serialport::{SerialPort, SerialPortType};
 use std::io::{self, BufRead, BufReader, Write};
 use std::time::Duration;
 
-use crate::{ShellState, BANNER};
+use crate::{shell_state::ShellState, BANNER};
 
 pub fn run_serial_shell() -> Result<()> {
     // Try to find the serial port

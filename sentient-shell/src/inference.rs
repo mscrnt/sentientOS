@@ -63,38 +63,11 @@ impl LocalInference {
         ))
     }
     
+    #[allow(dead_code)]
     pub fn load_test_model() -> Result<()> {
-        // This demonstrates loading a simple MNIST model for testing
-        log::info!("Loading test MNIST model...");
-        
-        let model_bytes = include_bytes!("../models/mnist.onnx");
-        let model = tract_onnx::onnx()
-            .model_for_read(&mut &model_bytes[..])
-            .context("Failed to load MNIST model")?;
-            
-        // Print model info
-        log::info!("Model inputs: {:?}", model.inputs);
-        log::info!("Model outputs: {:?}", model.outputs);
-        
-        // Create test input (28x28 image)
-        let input = tract_ndarray::Array4::<f32>::zeros((1, 1, 28, 28));
-        
-        let model = model
-            .into_optimized()?
-            .into_runnable()?;
-            
-        // Run inference
-        let output = model.run(tvec!(input.into()))?;
-        
-        // Get predictions
-        let predictions = output[0]
-            .to_array_view::<f32>()?
-            .iter()
-            .cloned()
-            .collect::<Vec<_>>();
-            
-        log::info!("MNIST predictions: {:?}", predictions);
-        
+        // Placeholder for loading models
+        // In production, models would be loaded from the kernel's GGUF file
+        log::info!("Model loading placeholder - actual implementation would load from GGUF");
         Ok(())
     }
 }

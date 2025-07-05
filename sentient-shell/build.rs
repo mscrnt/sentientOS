@@ -1,6 +1,4 @@
 use std::env;
-use std::fs;
-use std::path::Path;
 
 fn main() {
     // If building for UEFI target, create shell.efi

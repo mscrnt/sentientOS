@@ -23,6 +23,32 @@ struct MemoryStats {
     reserved_for_model: u64,
 }
 
+/// Initialize a minimal allocator early for JSON parsing
+pub fn init_early_allocator(system_table: &SystemTable<Boot>) {
+    serial_println!("🔧 Initializing early allocator...");
+    
+    // Allocate a small region using UEFI for early allocations
+    let boot_services = system_table.boot_services();
+    
+    // Allocate 4MB for early heap
+    const EARLY_HEAP_SIZE: usize = 4 * 1024 * 1024;
+    let early_heap = boot_services
+        .allocate_pages(
+            uefi::table::boot::AllocateType::AnyPages,
+            uefi::table::boot::MemoryType::LOADER_DATA,
+            EARLY_HEAP_SIZE / 4096,
+        )
+        .expect("Failed to allocate early heap");
+    
+    unsafe {
+        ALLOCATOR
+            .lock()
+            .init(early_heap as *mut u8, EARLY_HEAP_SIZE);
+    }
+    
+    serial_println!("✅ Early allocator initialized at 0x{:x}", early_heap);
+}
+
 pub fn init(system_table: &SystemTable<Boot>, boot_info: &BootInfo) {
     serial_println!("🔧 Initializing memory management...");
 
@@ -76,8 +102,11 @@ pub fn init(system_table: &SystemTable<Boot>, boot_info: &BootInfo) {
         boot_info.model.memory_address
     );
 
-    // Initialize heap
+    // Reinitialize heap with the larger region
     unsafe {
+        // The allocator might already be initialized, so we need to extend it
+        // For now, we'll just use the new larger heap
+        ALLOCATOR.force_unlock(); // Reset lock in case it's held
         ALLOCATOR
             .lock()
             .init(heap_start as *mut u8, heap_size as usize);

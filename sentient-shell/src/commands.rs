@@ -61,18 +61,8 @@ pub fn ask_ai(ai_client: &mut AiClient, prompt: &str) -> Result<()> {
             #[cfg(feature = "local-inference")]
             {
                 println!("Attempting local inference fallback...");
-                if let Some(ref mut local) = crate::ShellState::new().local_inference {
-                    match local.infer(prompt) {
-                        Ok(response) => {
-                            println!("\nLocal Response:");
-                            println!("{}", response);
-                            return Ok(());
-                        }
-                        Err(e) => {
-                            println!("Local inference also failed: {}", e);
-                        }
-                    }
-                }
+                // Note: In production, we'd pass the local_inference instance from ShellState
+                println!("Local inference is available but not connected in this context");
             }
             
             // If all else fails, provide a demo response

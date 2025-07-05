@@ -1,10 +1,14 @@
-use sentient_shell::ai::{AiClient, OllamaRequest, OllamaResponse};
+use sentient_shell::ai::{AiClient, OllamaRequest};
+use std::sync::{Arc, Mutex};
 
 #[test]
 #[ignore] // Run with: cargo test -- --ignored
 fn test_ollama_connection() {
     // Test basic connectivity to Ollama
-    let client = AiClient::new();
+    let _client = AiClient::new(
+        "http://192.168.69.197:11434".to_string(),
+        "http://192.168.69.197:7860".to_string()
+    );
     
     // Try to get model list
     let response = reqwest::blocking::get("http://192.168.69.197:11434/api/tags")
@@ -19,13 +23,16 @@ fn test_ollama_connection() {
 #[test]
 #[ignore]
 fn test_ollama_generate() {
-    let client = AiClient::new();
+    let client = AiClient::new(
+        "http://192.168.69.197:11434".to_string(),
+        "http://192.168.69.197:7860".to_string()
+    );
     
     // Create a simple test prompt
     let test_prompt = "Say 'Hello from SentientOS test suite!' and nothing else.";
     
     let request = OllamaRequest {
-        model: "deepseek-v2".to_string(),
+        model: "deepseek-v2:16b".to_string(),
         prompt: test_prompt.to_string(),
         stream: false,
         ..Default::default()
@@ -42,7 +49,10 @@ fn test_ollama_generate() {
 #[test]
 #[ignore]
 fn test_ollama_system_analysis() {
-    let client = AiClient::new();
+    let client = AiClient::new(
+        "http://192.168.69.197:11434".to_string(),
+        "http://192.168.69.197:7860".to_string()
+    );
     
     // Test a system analysis prompt
     let system_prompt = r#"You are an AI assistant integrated into SentientOS kernel.
@@ -53,7 +63,7 @@ fn test_ollama_system_analysis() {
     What is your assessment?"#;
     
     let request = OllamaRequest {
-        model: "deepseek-v2".to_string(),
+        model: "deepseek-v2:16b".to_string(),
         prompt: system_prompt.to_string(),
         stream: false,
         ..Default::default()
@@ -74,19 +84,19 @@ fn test_ollama_system_analysis() {
 #[test]
 #[ignore]
 fn test_ollama_streaming() {
-    use std::io::Write;
-    
-    let client = AiClient::new();
+    let client = AiClient::new(
+        "http://192.168.69.197:11434".to_string(),
+        "http://192.168.69.197:7860".to_string()
+    );
     
     let request = OllamaRequest {
-        model: "deepseek-v2".to_string(),
+        model: "deepseek-v2:16b".to_string(),
         prompt: "Count from 1 to 5, with each number on a new line.".to_string(),
         stream: true,
         ..Default::default()
     };
     
     print!("Streaming response: ");
-    std::io::stdout().flush().unwrap();
     
     // For streaming, we'd need to modify the client to handle stream responses
     // For now, test non-streaming version
@@ -110,14 +120,12 @@ fn test_ollama_streaming() {
 #[ignore]
 fn test_shell_ask_command_integration() {
     use sentient_shell::ShellState;
-    use std::sync::{Arc, Mutex};
-    use std::io::Write;
     
     // Create a shell instance
     let mut shell = ShellState::new();
     
-    // Capture output
-    let output = Arc::new(Mutex::new(Vec::new()));
+    // Capture output (not used in this simplified test)
+    let _output = Arc::new(Mutex::new(Vec::<u8>::new()));
     
     // Test the ask command
     let result = shell.execute_command("ask What is 2 + 2?");
@@ -130,7 +138,10 @@ fn test_shell_ask_command_integration() {
 #[test]
 #[ignore]
 fn test_model_listing() {
-    let client = AiClient::new();
+    let client = AiClient::new(
+        "http://192.168.69.197:11434".to_string(),
+        "http://192.168.69.197:7860".to_string()
+    );
     
     // Test models command functionality
     let models = client.list_models();
@@ -157,10 +168,13 @@ fn test_model_listing() {
 fn test_ollama_response_time() {
     use std::time::Instant;
     
-    let client = AiClient::new();
+    let client = AiClient::new(
+        "http://192.168.69.197:11434".to_string(),
+        "http://192.168.69.197:7860".to_string()
+    );
     
     let request = OllamaRequest {
-        model: "deepseek-v2".to_string(),
+        model: "deepseek-v2:16b".to_string(),
         prompt: "Reply with just 'OK'.".to_string(),
         stream: false,
         options: Some(serde_json::json!({
@@ -186,7 +200,10 @@ fn test_ollama_response_time() {
 #[test]
 #[ignore]
 fn test_error_handling() {
-    let client = AiClient::new();
+    let client = AiClient::new(
+        "http://192.168.69.197:11434".to_string(),
+        "http://192.168.69.197:7860".to_string()
+    );
     
     // Test with invalid model
     let request = OllamaRequest {

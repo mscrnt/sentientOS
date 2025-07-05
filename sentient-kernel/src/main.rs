@@ -34,6 +34,9 @@ fn kernel_main(image_handle: Handle, system_table: SystemTable<Boot>) -> Status 
     serial::init();
     serial_println!("🧠 SentientOS Kernel v0.1.0 - AI-First Operating System");
     serial_println!("🚀 Kernel EFI started successfully");
+    
+    // Initialize early allocator before parsing JSON
+    mm::init_early_allocator(&system_table);
 
     // Get bootinfo address from command line
     let boot_info_addr = match get_boot_info_address(&system_table) {
@@ -198,6 +201,11 @@ fn kernel_runtime_loop(_runtime_table: SystemTable<Runtime>, _boot_info: &'stati
         // Power management based on AI hints
         if ai::should_enter_low_power() {
             x86_64::instructions::hlt();
+        }
+        
+        // Small delay to prevent CPU spinning
+        for _ in 0..10000 {
+            core::hint::spin_loop();
         }
     }
 }

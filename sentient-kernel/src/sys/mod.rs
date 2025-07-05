@@ -144,7 +144,19 @@ pub fn get_task_count() -> u32 {
     1 // Just kernel for now
 }
 
+static mut LAST_AI_TICK: u64 = 0;
+const AI_TICK_INTERVAL_MS: u64 = 5000; // Only run every 5 seconds
+
 pub fn ai_system_tick() {
+    // Rate limit AI system ticks
+    unsafe {
+        let current_time = get_system_metrics().uptime_ms;
+        if current_time - LAST_AI_TICK < AI_TICK_INTERVAL_MS {
+            return;
+        }
+        LAST_AI_TICK = current_time;
+    }
+    
     // Submit periodic system analysis
     let metrics = get_system_metrics();
     let request = InferenceRequest::SystemAnalysis {
