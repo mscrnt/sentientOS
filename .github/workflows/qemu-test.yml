@@ -182,7 +182,7 @@ jobs:
         cp "$OVMF_VARS" ./OVMF_VARS.fd 2>/dev/null || cp "$OVMF_CODE" ./OVMF_VARS.fd
         
         # Create a Python script to interact with QEMU
-        cat << 'EOF' > qemu_test.py
+        cat > qemu_test.py << 'EOF'
 import subprocess
 import time
 import sys
