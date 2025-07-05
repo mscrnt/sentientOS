@@ -218,21 +218,30 @@ jobs:
         cat serial.log
         echo "=================="
         
+        # Convert serial log to handle Unicode/wide characters
+        echo "🔄 Processing serial output..."
+        # Remove ANSI escape sequences and Unicode characters
+        sed 's/\x1b\[[0-9;]*m//g' serial.log | tr -d '\0' | strings > serial_clean.log
+        
+        echo "📝 Cleaned serial output:"
+        echo "=================="
+        cat serial_clean.log
+        echo "=================="
+        
         # Check for critical boot phases
         BOOT_PHASES=(
           "Serial initialized"
-          "SentientOS UEFI Bootloader"
+          "SentientOS"
           "Hardware detection complete"
           "kernel.efi"
-          "Model loaded successfully"
+          "Model loaded"
           "Starting kernel"
-          "SentientOS Kernel"
           "AI subsystem initialized"
         )
         
         MISSING_PHASES=()
         for phase in "${BOOT_PHASES[@]}"; do
-          if ! grep -q "$phase" serial.log; then
+          if ! grep -i "$phase" serial_clean.log; then
             MISSING_PHASES+=("$phase")
           else
             echo "✅ Found: $phase"

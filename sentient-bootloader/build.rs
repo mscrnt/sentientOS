@@ -18,7 +18,7 @@ fn main() -> Result<()> {
 
     if efi_src.exists() {
         fs::create_dir_all(efi_dst.parent().unwrap())?;
-        fs::copy(&efi_src, &efi_dst).context(format!(
+        fs::copy(&efi_src, efi_dst).context(format!(
             "Failed to copy {} to {}",
             efi_src.display(),
             efi_dst.display()
