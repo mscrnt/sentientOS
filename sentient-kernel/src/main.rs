@@ -113,22 +113,55 @@ fn get_boot_info_address(system_table: &SystemTable<Boot>) -> Option<u64> {
         }
     };
 
-    // Convert to String by collecting the u16 values
-    let load_options_vec: alloc::vec::Vec<u16> =
-        load_options_cstr.iter().map(|&ch| u16::from(ch)).collect();
-    let load_options = alloc::string::String::from_utf16_lossy(&load_options_vec);
-
-    serial_println!("📋 Load options: '{}'", load_options);
-
-    for arg in load_options.split_whitespace() {
-        if let Some(addr_str) = arg.strip_prefix("bootinfo=0x") {
-            if let Ok(addr) = u64::from_str_radix(addr_str, 16) {
-                return Some(addr);
+    // Parse without allocation - convert to iterator and look for pattern
+    let chars_iter = load_options_cstr.iter();
+    let mut addr = 0u64;
+    let mut found = false;
+    
+    // State machine for parsing "bootinfo=0x<hex>"
+    let mut state = 0; // 0: searching, 1-11: matching "bootinfo=0x", 12+: parsing hex
+    let pattern = "bootinfo=0x";
+    
+    for ch in chars_iter {
+        let c = u16::from(*ch) as u8; // Convert Char16 to u8
+        
+        if state < pattern.len() {
+            // Matching pattern
+            if c == pattern.as_bytes()[state] {
+                state += 1;
+                if state == pattern.len() {
+                    // Found the pattern, start parsing hex
+                    found = true;
+                }
+            } else {
+                // Reset if no match
+                state = 0;
+                // Check if this char starts the pattern
+                if c == b'b' {
+                    state = 1;
+                }
+            }
+        } else if found {
+            // Parsing hex digits
+            if c >= b'0' && c <= b'9' {
+                addr = addr * 16 + (c - b'0') as u64;
+            } else if c >= b'a' && c <= b'f' {
+                addr = addr * 16 + (c - b'a' + 10) as u64;
+            } else if c >= b'A' && c <= b'F' {
+                addr = addr * 16 + (c - b'A' + 10) as u64;
+            } else {
+                // End of hex number
+                break;
             }
         }
     }
-
-    None
+    
+    if found && addr > 0 {
+        serial_println!("📋 Found bootinfo address: 0x{:x}", addr);
+        Some(addr)
+    } else {
+        None
+    }
 }
 
 fn kernel_runtime_loop(_runtime_table: SystemTable<Runtime>, _boot_info: &'static BootInfo) -> ! {

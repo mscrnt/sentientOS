@@ -28,11 +28,21 @@ pub fn init(system_table: &SystemTable<Boot>, boot_info: &BootInfo) {
 
     // Get UEFI memory map
     let mmap_size = system_table.boot_services().memory_map_size();
-    let mut mmap_buf = alloc::vec![0u8; mmap_size.map_size + 10 * mmap_size.entry_size];
+    
+    // Use a static buffer for memory map to avoid allocation
+    const MAX_MMAP_SIZE: usize = 16384; // 16KB should be enough for memory map
+    static mut MMAP_BUFFER: [u8; MAX_MMAP_SIZE] = [0; MAX_MMAP_SIZE];
+    
+    let required_size = mmap_size.map_size + 10 * mmap_size.entry_size;
+    if required_size > MAX_MMAP_SIZE {
+        panic!("Memory map too large: {} > {}", required_size, MAX_MMAP_SIZE);
+    }
+    
+    let mmap_buf = unsafe { &mut MMAP_BUFFER[..required_size] };
 
     let mmap = system_table
         .boot_services()
-        .memory_map(&mut mmap_buf)
+        .memory_map(mmap_buf)
         .expect("Failed to get memory map");
 
     // Find suitable memory for heap
