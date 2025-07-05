@@ -1,16 +1,7 @@
 use alloc::vec::Vec;
 use alloc::string::String;
 use serde::{Serialize, Deserialize};
-
-pub const BOOT_INFO_MAGIC: u32 = 0x53454E54; // "SENT"
-
-#[repr(C)]
-#[derive(Debug)]
-pub struct BootInfoHeader {
-    pub magic: u32,
-    pub version: u32,
-    pub size: u64,
-}
+use crate::serial_println;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BootInfo {
@@ -92,58 +83,50 @@ pub enum MemoryType {
 
 /// Parse BootInfo from physical address provided by bootloader
 pub unsafe fn parse_boot_info(addr: u64) -> &'static BootInfo {
-    use log::info;
+    serial_println!("Parsing BootInfo from 0x{:016x}", addr);
     
-    // First, read the header to validate
-    let header = &*(addr as *const BootInfoHeader);
+    // Read up to 64KB for the JSON data
+    let max_size = 65536;
+    let data = core::slice::from_raw_parts(addr as *const u8, max_size);
     
-    // Check magic number
-    if header.magic != BOOT_INFO_MAGIC {
-        // Try reading as raw JSON from bootloader (current implementation)
-        let json_data = core::slice::from_raw_parts(
-            addr as *const u8,
-            4096 // Max size to scan for JSON
-        );
-        
-        // Find the end of JSON by looking for null terminator
-        let mut json_len = 0;
-        for i in 0..4096 {
-            if json_data[i] == 0 {
-                json_len = i;
-                break;
-            }
+    // Find null terminator
+    let mut json_len = 0;
+    for i in 0..max_size {
+        if data[i] == 0 {
+            json_len = i;
+            break;
         }
-        
-        let json_str = core::str::from_utf8_unchecked(&json_data[..json_len]);
-        info!("Parsing BootInfo JSON ({} bytes)", json_len);
-        
-        // Parse JSON into static memory
-        // Note: In a real implementation, we'd allocate this properly
-        static mut BOOT_INFO_STORAGE: Option<BootInfo> = None;
-        
-        BOOT_INFO_STORAGE = serde_json::from_str(json_str).ok();
-        
-        BOOT_INFO_STORAGE.as_ref().expect("Failed to parse BootInfo")
-    } else {
-        // Future: Handle binary format with header
-        panic!("Binary BootInfo format not yet implemented");
+    }
+    
+    if json_len == 0 {
+        panic!("Empty BootInfo at address 0x{:016x}", addr);
+    }
+    
+    let json_str = core::str::from_utf8_unchecked(&data[..json_len]);
+    serial_println!("BootInfo JSON size: {} bytes", json_len);
+    
+    // Parse JSON into static storage
+    static mut BOOT_INFO_STORAGE: Option<BootInfo> = None;
+    
+    match serde_json::from_str(json_str) {
+        Ok(boot_info) => {
+            BOOT_INFO_STORAGE = Some(boot_info);
+            BOOT_INFO_STORAGE.as_ref().unwrap()
+        }
+        Err(e) => {
+            panic!("Failed to parse BootInfo JSON: {:?}", e);
+        }
     }
 }
 
 impl BootInfo {
-    /// Get the model's physical memory location
-    pub fn model_physical_address(&self) -> Option<u64> {
-        if self.model.memory_address != 0 {
-            Some(self.model.memory_address)
-        } else {
-            None
-        }
+    pub fn validate_model(&self) -> bool {
+        self.model.memory_address != 0 && self.model.size_bytes > 0
     }
     
-    /// Check if system has AI acceleration hardware
     pub fn has_ai_acceleration(&self) -> bool {
-        self.hardware.cpu_features.amx || 
         self.hardware.cpu_features.avx512 ||
+        self.hardware.cpu_features.amx ||
         !self.hardware.gpu_devices.is_empty() ||
         self.hardware.npu_available
     }

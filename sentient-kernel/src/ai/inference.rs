@@ -1,25 +1,29 @@
 use alloc::string::String;
-use crate::ai::SchedulerHints;
+use crate::ai::{SchedulerHints, PowerMode, SystemMetrics};
 
 #[derive(Debug, Clone)]
 pub enum InferenceRequest {
-    TextGeneration {
-        prompt: String,
-        max_tokens: usize,
-    },
     SystemAnalysis {
-        event_type: &'static str,
-        data: String,
+        event: &'static str,
+        metrics: SystemMetrics,
     },
     SchedulerOptimization {
-        cpu_usage: f32,
-        memory_usage: f32,
+        current_hints: SchedulerHints,
+    },
+    PowerManagement {
+        metrics: SystemMetrics,
+    },
+    PanicAnalysis {
+        location: &'static str,
+        line: u32,
+        message: String,
     },
 }
 
 #[derive(Debug, Clone)]
 pub enum InferenceResponse {
-    Text(String),
+    SchedulerUpdate(SchedulerHints),
+    PowerModeChange(PowerMode),
     SystemCommand(String),
-    SchedulerHint(SchedulerHints),
+    DiagnosticInfo(String),
 }

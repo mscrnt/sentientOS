@@ -2,16 +2,18 @@
 name = "sentient-kernel"
 version = "0.1.0"
 edition = "2021"
-authors = ["SentientOS Team"]
+
+[[bin]]
+name = "kernel"
+path = "src/main.rs"
 
 [dependencies]
-spin = "0.9"
+uefi = { version = "0.20", features = ["alloc"] }
+# uefi-services = "0.17" # Conflicts with our allocator
 log = { version = "0.4", default-features = false }
-linked_list_allocator = "0.10"
+spin = "0.9"
 x86_64 = "0.14"
-uart_16550 = "0.3"
-volatile = "0.5"
-lazy_static = { version = "1.4", features = ["spin_no_std"] }
+linked_list_allocator = "0.10"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
 hashbrown = { version = "0.14", default-features = false }
@@ -19,10 +21,8 @@ hashbrown = { version = "0.14", default-features = false }
 [profile.release]
 opt-level = "z"
 lto = true
+codegen-units = 1
 panic = "abort"
 
 [profile.dev]
 panic = "abort"
-
-[build-dependencies]
-cc = "1.0"
