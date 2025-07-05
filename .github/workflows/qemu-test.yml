@@ -181,24 +181,81 @@ jobs:
         cp "$OVMF_CODE" ./OVMF_CODE.fd
         cp "$OVMF_VARS" ./OVMF_VARS.fd 2>/dev/null || cp "$OVMF_CODE" ./OVMF_VARS.fd
         
-        # Create test script for shell commands
-        # Note: We only test basic shell functionality in CI
-        # AI endpoints (Ollama/SD) are only available on local dev network
-        echo -e "help\nstatus\nmodels\nexit" > test_commands.txt
+        # Create a Python script to interact with QEMU
+        cat << 'EOF' > qemu_test.py
+import subprocess
+import time
+import sys
+
+# Start QEMU process
+qemu_cmd = [
+    'qemu-system-x86_64',
+    '-machine', 'q35,accel=tcg',
+    '-m', '4096',
+    '-cpu', 'max',
+    '-drive', 'if=pflash,format=raw,readonly=on,file=OVMF_CODE.fd',
+    '-drive', 'if=pflash,format=raw,file=OVMF_VARS.fd',
+    '-drive', 'format=raw,file=boot.img',
+    '-nographic',
+    '-serial', 'mon:stdio',
+    '-device', 'isa-debug-exit,iobase=0xf4,iosize=0x04'
+]
+
+proc = subprocess.Popen(qemu_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, 
+                        stderr=subprocess.STDOUT, universal_newlines=True, bufsize=0)
+
+output = []
+shell_ready = False
+
+# Wait for shell prompt
+print("Waiting for shell prompt...")
+start_time = time.time()
+while time.time() - start_time < 30:
+    try:
+        line = proc.stdout.readline()
+        if line:
+            output.append(line)
+            sys.stdout.write(line)
+            sys.stdout.flush()
+            if "sentient>" in line and not shell_ready:
+                shell_ready = True
+                print("\nShell prompt detected!")
+                time.sleep(2)
+                
+                # Send commands
+                commands = ["help\n", "status\n", "models\n", "exit\n"]
+                for cmd in commands:
+                    print(f"Sending command: {cmd.strip()}")
+                    proc.stdin.write(cmd)
+                    proc.stdin.flush()
+                    time.sleep(3)
+                    
+                    # Read output
+                    deadline = time.time() + 2
+                    while time.time() < deadline:
+                        line = proc.stdout.readline()
+                        if line:
+                            output.append(line)
+                            sys.stdout.write(line)
+                            sys.stdout.flush()
+    except:
+        break
+
+# Wait for process to finish
+try:
+    proc.wait(timeout=10)
+except subprocess.TimeoutExpired:
+    proc.terminate()
+
+# Save output
+with open('serial.log', 'w') as f:
+    f.writelines(output)
+
+sys.exit(0)
+EOF
         
-        # Run QEMU with test commands as input
-        timeout 45s qemu-system-x86_64 \
-          -machine q35,accel=tcg \
-          -m 4096 \
-          -cpu max \
-          -drive if=pflash,format=raw,readonly=on,file=OVMF_CODE.fd \
-          -drive if=pflash,format=raw,file=OVMF_VARS.fd \
-          -drive format=raw,file=boot.img \
-          -nographic \
-          -serial file:serial.log \
-          -device isa-debug-exit,iobase=0xf4,iosize=0x04 \
-          < test_commands.txt \
-          || QEMU_EXIT_CODE=$?
+        # Run the test script
+        python3 qemu_test.py || QEMU_EXIT_CODE=$?
         
         # QEMU exit codes: 33 = guest triple fault, 124 = timeout reached
         if [ "${QEMU_EXIT_CODE}" = "124" ]; then

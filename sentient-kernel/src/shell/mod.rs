@@ -135,6 +135,7 @@ fn cmd_status() {
             serial_println!("  AI Subsystem: Error accessing");
         }
     }
+    serial_println!(); // Add blank line for better formatting
 }
 
 fn cmd_ask(prompt: &str) {
@@ -185,7 +186,8 @@ fn cmd_ask(prompt: &str) {
 
 fn cmd_models() {
     serial_println!("Available Models:");
-    serial_println!("\nKernel AI Model:");
+    serial_println!();
+    serial_println!("Kernel AI Model:");
 
     match crate::ai::try_get_ai_subsystem() {
         Ok(ai_lock) => {
@@ -202,9 +204,11 @@ fn cmd_models() {
         }
     }
 
-    serial_println!("\nRemote Models (when network available):");
+    serial_println!();
+    serial_println!("Remote Models (when network available):");
     serial_println!("  - deepseek-v2 (via Ollama)");
     serial_println!("  - stable-diffusion-xl (via SD WebUI)");
+    serial_println!();
 }
 
 fn cmd_image(prompt: &str) {
