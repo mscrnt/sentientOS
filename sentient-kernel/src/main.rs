@@ -134,16 +134,23 @@ fn get_boot_info_address(system_table: &SystemTable<Boot>) -> Option<u64> {
 fn kernel_runtime_loop(_runtime_table: SystemTable<Runtime>, _boot_info: &'static BootInfo) -> ! {
     serial_println!("🎯 Entering AI-driven kernel runtime");
 
-    // Start the shell
-    serial_println!("🐚 Starting SentientShell...");
-    let mut shell = shell::Shell::new();
-    shell.start();
+    // Initialize a simple shell state without allocation
+    let mut shell_started = false;
 
     // Main kernel loop
     loop {
-        // Check for serial input for shell
+        // Start shell after first iteration (when memory is ready)
+        if !shell_started {
+            serial_println!("🐚 Starting SentientShell...");
+            serial_println!("{}", shell::SHELL_BANNER);
+            serial_println!("Type 'help' for available commands.\n");
+            crate::serial::_print(format_args!("sentient> "));
+            shell_started = true;
+        }
+        
+        // Check for serial input - handle commands directly without allocation
         if let Some(ch) = serial::try_read_char() {
-            shell.handle_input(ch);
+            shell::handle_input_simple(ch);
         }
 
         // Process AI inference requests
