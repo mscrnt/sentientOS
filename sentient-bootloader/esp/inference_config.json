@@ -1,0 +1,7 @@
+{
+  "model_path": "\\neuro_model.gguf",
+  "runtime": "Hybrid",
+  "batch_size": 1,
+  "context_length": 4096,
+  "temperature": 0.7
+}

@@ -1,0 +1,44 @@
+# Rust
+target/
+Cargo.lock
+**/*.rs.bk
+*.pdb
+
+# UEFI/ESP
+*.efi
+esp/EFI/BOOT/BOOTX64.EFI
+esp/neuro_model.gguf
+esp/kernel.efi
+
+# Build artifacts
+build/
+dist/
+*.iso
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+/tmp/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# Dependencies
+node_modules/

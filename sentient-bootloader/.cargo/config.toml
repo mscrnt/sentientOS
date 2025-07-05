@@ -1,0 +1,9 @@
+[build]
+target = "x86_64-unknown-uefi"
+
+[unstable]
+build-std = ["core", "compiler_builtins", "alloc"]
+build-std-features = ["compiler-builtins-mem"]
+
+[target.x86_64-unknown-uefi]
+runner = "qemu-system-x86_64 -bios /usr/share/ovmf/OVMF.fd -drive format=raw,file=fat:rw:esp -serial mon:stdio -display none -m 4096"
