@@ -111,12 +111,12 @@ fn get_boot_info_address(system_table: &SystemTable<Boot>) -> Option<u64> {
             return None;
         }
     };
-    
+
     // Convert to String by collecting the u16 values
     let load_options_vec: alloc::vec::Vec<u16> =
         load_options_cstr.iter().map(|&ch| u16::from(ch)).collect();
     let load_options = alloc::string::String::from_utf16_lossy(&load_options_vec);
-    
+
     serial_println!("📋 Load options: '{}'", load_options);
 
     for arg in load_options.split_whitespace() {
