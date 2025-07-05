@@ -38,6 +38,12 @@ pub fn launch_kernel(
         }
     };
 
+    // Keep args_vec in scope until kernel starts
+    let args = alloc::format!("bootinfo=0x{boot_info_addr:016x}");
+    let args_vec = crate::str_to_cstr16(&args);
+    
+    serial_println!("📝 Setting kernel args: '{}'", args);
+    
     {
         let mut loaded_image =
             match boot_services.open_protocol_exclusive::<LoadedImage>(kernel_handle) {
@@ -48,12 +54,13 @@ pub fn launch_kernel(
                 }
             };
 
-        let args = alloc::format!("bootinfo=0x{boot_info_addr:016x}");
-        let args_vec = crate::str_to_cstr16(&args);
-
+        // Set load options - size should include the null terminator
+        let load_options_size = (args_vec.len() * 2) as u32;
+        serial_println!("📏 Load options size: {} bytes ({} chars)", load_options_size, args_vec.len());
+        
         unsafe {
             loaded_image
-                .set_load_options(args_vec.as_ptr() as *const u8, (args_vec.len() * 2) as u32);
+                .set_load_options(args_vec.as_ptr() as *const u8, load_options_size);
         }
     }
 
