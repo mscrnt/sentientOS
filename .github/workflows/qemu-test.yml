@@ -119,9 +119,56 @@ jobs:
       run: |
         echo "🚀 Starting QEMU boot test..."
         
+        # Find OVMF firmware
+        OVMF_CODE=""
+        OVMF_VARS=""
+        
+        # Check common OVMF locations
+        for dir in /usr/share/OVMF /usr/share/ovmf /usr/share/qemu/firmware /usr/share/qemu; do
+          if [ -f "$dir/OVMF_CODE.fd" ]; then
+            OVMF_CODE="$dir/OVMF_CODE.fd"
+            OVMF_VARS="$dir/OVMF_VARS.fd"
+            break
+          elif [ -f "$dir/OVMF.fd" ]; then
+            OVMF_CODE="$dir/OVMF.fd"
+            OVMF_VARS="$dir/OVMF.fd"
+            break
+          fi
+        done
+        
+        # If not found in standard locations, check the ovmf package files
+        if [ -z "$OVMF_CODE" ]; then
+          # List all OVMF files for debugging
+          echo "📁 Searching for OVMF files..."
+          find /usr -name "*OVMF*.fd" -type f 2>/dev/null | head -20 || true
+          
+          # Try to use the first OVMF_CODE file found
+          OVMF_CODE=$(find /usr -name "OVMF_CODE*.fd" -type f 2>/dev/null | grep -v "secboot\|4M" | head -1)
+          if [ -z "$OVMF_CODE" ]; then
+            OVMF_CODE=$(find /usr -name "OVMF.fd" -type f 2>/dev/null | head -1)
+          fi
+          
+          # For VARS, try to find matching file or use CODE as fallback
+          if [ -n "$OVMF_CODE" ]; then
+            OVMF_VARS=$(echo "$OVMF_CODE" | sed 's/CODE/VARS/g')
+            if [ ! -f "$OVMF_VARS" ]; then
+              OVMF_VARS="$OVMF_CODE"
+            fi
+          fi
+        fi
+        
+        if [ -z "$OVMF_CODE" ]; then
+          echo "❌ OVMF firmware not found!"
+          exit 1
+        fi
+        
+        echo "✅ Found OVMF firmware:"
+        echo "   CODE: $OVMF_CODE"
+        echo "   VARS: $OVMF_VARS"
+        
         # Copy OVMF firmware
-        cp /usr/share/OVMF/OVMF_CODE.fd .
-        cp /usr/share/OVMF/OVMF_VARS.fd .
+        cp "$OVMF_CODE" ./OVMF_CODE.fd
+        cp "$OVMF_VARS" ./OVMF_VARS.fd 2>/dev/null || cp "$OVMF_CODE" ./OVMF_VARS.fd
         
         # Run QEMU in background with timeout
         timeout 30s qemu-system-x86_64 \
