@@ -12,8 +12,7 @@ const FIFO_CONTROL: u16 = COM1_BASE + 2;
 const LINE_CONTROL: u16 = COM1_BASE + 3;
 #[allow(dead_code)]
 const MODEM_CONTROL: u16 = COM1_BASE + 4;
-#[allow(dead_code)]
-const LINE_STATUS: u16 = COM1_BASE + 5;
+const LINE_STATUS_REGISTER: u16 = COM1_BASE + 5;
 #[allow(dead_code)]
 const DIVISOR_LSB: u16 = COM1_BASE;
 #[allow(dead_code)]
@@ -91,6 +90,19 @@ macro_rules! serial_println {
 pub fn println(args: fmt::Arguments) {
     _print(args);
     _print(format_args!("\n"));
+}
+
+pub fn try_read_char() -> Option<char> {
+    unsafe {
+        let line_status = inb(LINE_STATUS_REGISTER);
+        if line_status & 0x01 != 0 {
+            // Data available
+            let byte = inb(DATA_REGISTER);
+            Some(byte as char)
+        } else {
+            None
+        }
+    }
 }
 
 #[inline]

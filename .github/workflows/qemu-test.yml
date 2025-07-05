@@ -181,8 +181,18 @@ jobs:
         cp "$OVMF_CODE" ./OVMF_CODE.fd
         cp "$OVMF_VARS" ./OVMF_VARS.fd 2>/dev/null || cp "$OVMF_CODE" ./OVMF_VARS.fd
         
-        # Run QEMU in background with timeout
-        timeout 30s qemu-system-x86_64 \
+        # Create test script for shell commands
+        # Note: We only test basic shell functionality in CI
+        # AI endpoints (Ollama/SD) are only available on local dev network
+        cat > test_commands.txt << 'EOF'
+help
+status
+models
+exit
+EOF
+        
+        # Run QEMU with test commands as input
+        timeout 45s qemu-system-x86_64 \
           -machine q35,accel=tcg \
           -m 4096 \
           -cpu max \
@@ -192,6 +202,7 @@ jobs:
           -nographic \
           -serial file:serial.log \
           -device isa-debug-exit,iobase=0xf4,iosize=0x04 \
+          < test_commands.txt \
           || QEMU_EXIT_CODE=$?
         
         # QEMU exit codes: 33 = guest triple fault, 124 = timeout reached
@@ -236,6 +247,7 @@ jobs:
           "Model loaded"
           "Starting kernel"
           "Kernel EFI started"
+          "SentientShell v1.0"
         )
         
         MISSING_PHASES=()
@@ -258,6 +270,39 @@ jobs:
         
         echo ""
         echo "🎉 All boot phases completed successfully!"
+        
+        # Test shell command outputs
+        echo ""
+        echo "🔍 Verifying shell commands..."
+        
+        SHELL_TESTS=(
+          "SentientShell Commands"  # From help command
+          "System Status"           # From status command
+          "Shell Version"           # From status command
+          "Available Models"        # From models command
+          "Kernel AI Model"         # From models command
+        )
+        
+        MISSING_TESTS=()
+        for test in "${SHELL_TESTS[@]}"; do
+          if ! grep -i "$test" serial_clean.log; then
+            MISSING_TESTS+=("$test")
+          else
+            echo "✅ Found: $test"
+          fi
+        done
+        
+        if [ ${#MISSING_TESTS[@]} -gt 0 ]; then
+          echo ""
+          echo "❌ Missing shell outputs:"
+          for test in "${MISSING_TESTS[@]}"; do
+            echo "  - $test"
+          done
+          exit 1
+        fi
+        
+        echo ""
+        echo "🎉 All shell tests passed!"
     
     - name: Upload artifacts
       if: always()
