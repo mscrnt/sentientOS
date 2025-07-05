@@ -70,10 +70,10 @@ fn kernel_main(image_handle: Handle, system_table: SystemTable<Boot>) -> Status 
     );
 
     // Initialize memory management with UEFI memory map
-    mm::init(&system_table, &boot_info);
+    mm::init(&system_table, boot_info);
 
     // Initialize AI subsystem with the loaded model
-    match ai::init(&boot_info) {
+    match ai::init(boot_info) {
         Ok(_) => serial_println!("✅ AI subsystem initialized"),
         Err(e) => {
             serial_println!("❌ Failed to initialize AI: {}", e);
@@ -82,7 +82,7 @@ fn kernel_main(image_handle: Handle, system_table: SystemTable<Boot>) -> Status 
     }
 
     // Initialize system management
-    sys::init(unsafe { system_table.unsafe_clone() }, &boot_info);
+    sys::init(unsafe { system_table.unsafe_clone() }, boot_info);
 
     // Exit boot services and take control
     serial_println!("🔄 Preparing to exit boot services...");

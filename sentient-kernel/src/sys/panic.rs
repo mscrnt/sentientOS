@@ -2,6 +2,7 @@ use crate::ai::{InferenceRequest, InferenceResponse};
 use crate::serial_println;
 use core::panic::PanicInfo;
 
+#[allow(dead_code)]
 pub fn handle_panic(info: &PanicInfo) -> ! {
     serial_println!("\r\n\r\n💥💥💥 KERNEL PANIC 💥💥💥");
 
@@ -13,7 +14,7 @@ pub fn handle_panic(info: &PanicInfo) -> ! {
     };
 
     // Extract panic message
-    let message = alloc::format!("{}", info);
+    let message = alloc::format!("{info}");
 
     serial_println!("📍 Location: {}:{}", file, line);
     serial_println!("💬 Message: {}", message);

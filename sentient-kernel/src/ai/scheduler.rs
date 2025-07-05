@@ -1,4 +1,5 @@
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct SchedulerHints {
     pub time_quantum_ms: u32,
     pub priority_boost: f32,
@@ -7,6 +8,7 @@ pub struct SchedulerHints {
 }
 
 #[derive(Debug, Clone, Copy)]
+#[allow(dead_code)]
 pub enum CpuAffinity {
     Any,
     Performance,

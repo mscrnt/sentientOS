@@ -174,10 +174,7 @@ impl ModelRuntime {
         };
 
         Ok(InferenceResponse::DiagnosticInfo(alloc::format!(
-            "Panic at {}:{} - Analysis: {}",
-            location,
-            line,
-            diagnosis
+            "Panic at {location}:{line} - Analysis: {diagnosis}"
         )))
     }
 }

@@ -26,6 +26,7 @@ pub fn get_time_ms() -> u64 {
     *TIMER_TICKS.lock()
 }
 
+#[allow(dead_code)]
 pub fn tick() {
     *TIMER_TICKS.lock() += 1;
 }

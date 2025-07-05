@@ -91,8 +91,8 @@ pub unsafe fn parse_boot_info(addr: u64) -> &'static BootInfo {
 
     // Find null terminator
     let mut json_len = 0;
-    for i in 0..max_size {
-        if data[i] == 0 {
+    for (i, &byte) in data.iter().enumerate().take(max_size) {
+        if byte == 0 {
             json_len = i;
             break;
         }
@@ -111,7 +111,9 @@ pub unsafe fn parse_boot_info(addr: u64) -> &'static BootInfo {
     match serde_json::from_str(json_str) {
         Ok(boot_info) => {
             BOOT_INFO_STORAGE = Some(boot_info);
-            BOOT_INFO_STORAGE.as_ref().unwrap()
+            // Use addr_of! to avoid the warning about mutable static reference
+            let ptr = core::ptr::addr_of!(BOOT_INFO_STORAGE);
+            unsafe { (*ptr).as_ref().unwrap() }
         }
         Err(e) => {
             panic!("Failed to parse BootInfo JSON: {:?}", e);
@@ -120,10 +122,12 @@ pub unsafe fn parse_boot_info(addr: u64) -> &'static BootInfo {
 }
 
 impl BootInfo {
+    #[allow(dead_code)]
     pub fn validate_model(&self) -> bool {
         self.model.memory_address != 0 && self.model.size_bytes > 0
     }
 
+    #[allow(dead_code)]
     pub fn has_ai_acceleration(&self) -> bool {
         self.hardware.cpu_features.avx512
             || self.hardware.cpu_features.amx

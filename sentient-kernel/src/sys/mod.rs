@@ -89,7 +89,7 @@ pub fn print_banner(boot_info: &BootInfo, system_table: &mut SystemTable<Boot>) 
 
     // Convert model name to UTF-16 and print character by character
     for ch in boot_info.model.name.chars() {
-        let s = alloc::format!("{}", ch);
+        let s = alloc::format!("{ch}");
         let utf16: alloc::vec::Vec<u16> = s.encode_utf16().collect();
         let mut buf = alloc::vec::Vec::with_capacity(utf16.len() + 1);
         buf.extend_from_slice(&utf16);
@@ -104,9 +104,9 @@ pub fn print_banner(boot_info: &BootInfo, system_table: &mut SystemTable<Boot>) 
 
     // Print memory size
     let mem_mb = boot_info.hardware.total_memory / (1024 * 1024);
-    let mem_str = alloc::format!("{} MB", mem_mb);
+    let mem_str = alloc::format!("{mem_mb} MB");
     for ch in mem_str.chars() {
-        let s = alloc::format!("{}", ch);
+        let s = alloc::format!("{ch}");
         let utf16: alloc::vec::Vec<u16> = s.encode_utf16().collect();
         let mut buf = alloc::vec::Vec::with_capacity(utf16.len() + 1);
         buf.extend_from_slice(&utf16);
@@ -134,10 +134,12 @@ pub fn get_time_ms() -> u64 {
     time::get_time_ms()
 }
 
+#[allow(dead_code)]
 pub fn get_uptime_ms() -> u64 {
     get_time_ms() - *BOOT_TIME.lock()
 }
 
+#[allow(dead_code)]
 pub fn get_task_count() -> u32 {
     1 // Just kernel for now
 }
@@ -161,6 +163,7 @@ pub fn process_tasks() {
     crate::ai::process_pending_inferences();
 }
 
+#[allow(dead_code)]
 pub fn shutdown(_status: Status) -> ! {
     serial_println!("🛑 System shutdown requested");
 
@@ -171,6 +174,7 @@ pub fn shutdown(_status: Status) -> ! {
     }
 }
 
+#[allow(dead_code)]
 pub fn handle_ai_response(response: InferenceResponse) {
     match response {
         InferenceResponse::SystemCommand(cmd) => {

@@ -2,13 +2,21 @@ use core::fmt::{self, Write};
 use spin::Mutex;
 
 const COM1_BASE: u16 = 0x3F8;
-const DATA_REGISTER: u16 = COM1_BASE + 0;
+#[allow(dead_code)]
+const DATA_REGISTER: u16 = COM1_BASE;
+#[allow(dead_code)]
 const INTERRUPT_ENABLE: u16 = COM1_BASE + 1;
+#[allow(dead_code)]
 const FIFO_CONTROL: u16 = COM1_BASE + 2;
+#[allow(dead_code)]
 const LINE_CONTROL: u16 = COM1_BASE + 3;
+#[allow(dead_code)]
 const MODEM_CONTROL: u16 = COM1_BASE + 4;
+#[allow(dead_code)]
 const LINE_STATUS: u16 = COM1_BASE + 5;
-const DIVISOR_LSB: u16 = COM1_BASE + 0;
+#[allow(dead_code)]
+const DIVISOR_LSB: u16 = COM1_BASE;
+#[allow(dead_code)]
 const DIVISOR_MSB: u16 = COM1_BASE + 1;
 
 const LINE_STATUS_TRANSMIT_EMPTY: u8 = 0x20;
@@ -27,7 +35,7 @@ impl SerialPort {
             // Already initialized by bootloader, but ensure settings
             outb(self.base + 1, 0x00); // Disable interrupts
             outb(self.base + 3, 0x80); // Enable DLAB
-            outb(self.base + 0, 0x03); // Divisor low (38400 baud)
+            outb(self.base, 0x03); // Divisor low (38400 baud)
             outb(self.base + 1, 0x00); // Divisor high
             outb(self.base + 3, 0x03); // 8N1
             outb(self.base + 2, 0xC7); // Enable FIFO
@@ -66,9 +74,9 @@ pub fn _print(args: fmt::Arguments) {
 
 #[macro_export]
 macro_rules! serial_print {
-    ($($arg:tt)*) => {
+    ($($arg:tt)*) => {{
         $crate::serial::_print(format_args!($($arg)*));
-    };
+    }};
 }
 
 #[macro_export]
@@ -79,6 +87,7 @@ macro_rules! serial_println {
         concat!($fmt, "\n"), $($arg)*));
 }
 
+#[allow(dead_code)]
 pub fn println(args: fmt::Arguments) {
     _print(args);
     _print(format_args!("\n"));

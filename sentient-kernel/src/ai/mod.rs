@@ -15,6 +15,7 @@ pub use scheduler::SchedulerHints;
 
 static AI_SUBSYSTEM: Mutex<Option<AISubsystem>> = Mutex::new(None);
 
+#[allow(dead_code)]
 pub fn try_get_ai_subsystem() -> Result<&'static Mutex<Option<AISubsystem>>, String> {
     if AI_SUBSYSTEM.lock().is_some() {
         Ok(&AI_SUBSYSTEM)
@@ -33,6 +34,7 @@ pub struct AISubsystem {
 }
 
 impl AISubsystem {
+    #[allow(dead_code)]
     pub fn request_inference(
         &mut self,
         request: InferenceRequest,
@@ -139,7 +141,9 @@ fn execute_ai_command(cmd: &str) {
         "optimize_memory" => crate::mm::run_memory_optimizer(),
         "reduce_power" => set_power_mode(PowerMode::LowPower),
         "boost_performance" => set_power_mode(PowerMode::Performance),
-        _ => serial_println!("⚠️ Unknown AI command: {}", cmd),
+        _ => {
+            serial_println!("⚠️ Unknown AI command: {}", cmd);
+        }
     }
 }
 
@@ -151,6 +155,7 @@ pub fn should_enter_low_power() -> bool {
         .unwrap_or(false)
 }
 
+#[allow(dead_code)]
 pub fn get_scheduler_hints() -> SchedulerHints {
     AI_SUBSYSTEM
         .lock()
@@ -193,6 +198,7 @@ pub struct SystemMetrics {
     pub uptime_ms: u64,
     pub free_memory: u64,
     pub task_count: u32,
+    #[allow(dead_code)]
     pub interrupt_count: u64,
 }
 

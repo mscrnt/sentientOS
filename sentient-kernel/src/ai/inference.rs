@@ -2,6 +2,7 @@ use crate::ai::{PowerMode, SchedulerHints, SystemMetrics};
 use alloc::string::String;
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub enum InferenceRequest {
     SystemAnalysis {
         event: &'static str,
