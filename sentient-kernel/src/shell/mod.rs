@@ -1,6 +1,6 @@
+use crate::serial_println;
 use alloc::string::String;
 use alloc::vec::Vec;
-use crate::serial_println;
 
 const SHELL_BANNER: &str = r#"
 ╔═══════════════════════════════════════════╗
@@ -19,13 +19,13 @@ impl Shell {
             input_buffer: String::new(),
         }
     }
-    
+
     pub fn start(&mut self) {
         serial_println!("{}", SHELL_BANNER);
         serial_println!("Type 'help' for available commands.\n");
         self.show_prompt();
     }
-    
+
     pub fn handle_input(&mut self, ch: char) {
         match ch {
             '\r' | '\n' => {
@@ -57,17 +57,17 @@ impl Shell {
             }
         }
     }
-    
+
     fn show_prompt(&self) {
         crate::serial::_print(format_args!("sentient> "));
     }
-    
+
     fn execute_command(&mut self, input: &str) {
         let parts: Vec<&str> = input.split_whitespace().collect();
         if parts.is_empty() {
             return;
         }
-        
+
         match parts[0] {
             "help" => self.cmd_help(),
             "status" => self.cmd_status(),
@@ -90,11 +90,14 @@ impl Shell {
             }
             "exit" => self.cmd_exit(),
             _ => {
-                serial_println!("Unknown command: {}. Type 'help' for available commands.", parts[0]);
+                serial_println!(
+                    "Unknown command: {}. Type 'help' for available commands.",
+                    parts[0]
+                );
             }
         }
     }
-    
+
     fn cmd_help(&self) {
         serial_println!("SentientShell Commands:");
         serial_println!("  help       - Show this help message");
@@ -108,13 +111,16 @@ impl Shell {
         serial_println!("  ask What is the meaning of life?");
         serial_println!("  image A beautiful sunset over mountains");
     }
-    
+
     fn cmd_status(&self) {
         serial_println!("System Status:");
         serial_println!("  Shell Version: 1.0");
         serial_println!("  Kernel: SentientOS v0.1.0");
-        serial_println!("  Memory: {} MB free", crate::mm::get_free_memory() / (1024 * 1024));
-        
+        serial_println!(
+            "  Memory: {} MB free",
+            crate::mm::get_free_memory() / (1024 * 1024)
+        );
+
         // Check AI subsystem
         match crate::ai::try_get_ai_subsystem() {
             Ok(ai_lock) => {
@@ -130,21 +136,21 @@ impl Shell {
             }
         }
     }
-    
+
     fn cmd_ask(&mut self, prompt: &str) {
         serial_println!("Thinking...");
-        
+
         // In kernel mode, we use the AI subsystem directly
         match crate::ai::try_get_ai_subsystem() {
             Ok(ai_lock) => {
                 if let Some(ref mut ai) = *ai_lock.lock() {
                     use crate::ai::{InferenceRequest, InferenceResponse};
-                    
+
                     let request = InferenceRequest::SystemAnalysis {
                         event: "shell_query",
                         metrics: crate::ai::SystemMetrics::current(),
                     };
-                    
+
                     match ai.request_inference(request) {
                         Ok(InferenceResponse::DiagnosticInfo(info)) => {
                             serial_println!("\nResponse: {}", info);
@@ -164,15 +170,18 @@ impl Shell {
                 serial_println!("\nError: Failed to access AI subsystem - {}", e);
             }
         }
-        
+
         // Fallback response for demo
-        serial_println!("\n[Demo Response] Query: '{}' - The AI model integration is being established.", prompt);
+        serial_println!(
+            "\n[Demo Response] Query: '{}' - The AI model integration is being established.",
+            prompt
+        );
     }
-    
+
     fn cmd_models(&self) {
         serial_println!("Available Models:");
         serial_println!("\nKernel AI Model:");
-        
+
         match crate::ai::try_get_ai_subsystem() {
             Ok(ai_lock) => {
                 if let Some(ref ai) = *ai_lock.lock() {
@@ -187,22 +196,22 @@ impl Shell {
                 serial_println!("  - Error accessing AI subsystem");
             }
         }
-        
+
         serial_println!("\nRemote Models (when network available):");
         serial_println!("  - deepseek-v2 (via Ollama)");
         serial_println!("  - stable-diffusion-xl (via SD WebUI)");
     }
-    
+
     fn cmd_image(&mut self, prompt: &str) {
         serial_println!("Image generation in kernel mode is not yet implemented.");
         serial_println!("Prompt received: '{}'", prompt);
         serial_println!("\n[Demo] Image generated: SHA256 = a1b2c3d4e5f6...");
     }
-    
+
     fn cmd_exit(&self) {
         serial_println!("Exiting shell...");
         serial_println!("System halt requested.");
-        
+
         // Signal kernel to halt
         crate::sys::shutdown(uefi::Status::SUCCESS);
     }
