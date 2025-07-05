@@ -49,7 +49,7 @@ pub fn handle_input_simple(ch: char) {
 fn execute_command_simple() {
     unsafe {
         let cmd = core::str::from_utf8_unchecked(&COMMAND_BUFFER[..COMMAND_LEN]);
-        
+
         // Simple string comparison without allocation
         if cmd_equals(cmd, "help") {
             cmd_help();
@@ -66,7 +66,10 @@ fn execute_command_simple() {
         } else if cmd_equals(cmd, "exit") {
             cmd_exit();
         } else {
-            serial_println!("Unknown command: {}. Type 'help' for available commands.", cmd);
+            serial_println!(
+                "Unknown command: {}. Type 'help' for available commands.",
+                cmd
+            );
         }
     }
 }

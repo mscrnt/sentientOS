@@ -147,7 +147,7 @@ fn kernel_runtime_loop(_runtime_table: SystemTable<Runtime>, _boot_info: &'stati
             crate::serial::_print(format_args!("sentient> "));
             shell_started = true;
         }
-        
+
         // Check for serial input - handle commands directly without allocation
         if let Some(ch) = serial::try_read_char() {
             shell::handle_input_simple(ch);
