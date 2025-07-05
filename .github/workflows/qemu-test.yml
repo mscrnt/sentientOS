@@ -99,14 +99,25 @@ jobs:
         # Mount and copy ESP contents
         mkdir -p mnt
         sudo mount -o loop boot.img mnt
-        sudo cp -r esp/* mnt/
         
-        # Ensure directory structure
+        # Create proper directory structure
         sudo mkdir -p mnt/EFI/BOOT
+        
+        # Copy bootloader to the correct location
+        sudo cp esp/EFI/BOOT/BOOTX64.EFI mnt/EFI/BOOT/BOOTX64.EFI
+        
+        # Copy other files to root
+        sudo cp esp/kernel.efi mnt/
+        sudo cp esp/inference_config.json mnt/
+        sudo cp esp/neuro_model.gguf mnt/
+        sudo cp esp/startup.nsh mnt/ 2>/dev/null || true
         
         # List contents for debugging
         echo "📁 Disk contents:"
         sudo find mnt -type f -exec ls -la {} \;
+        echo ""
+        echo "📁 Directory structure:"
+        sudo tree mnt/ || sudo find mnt -type d | sort
         
         sudo umount mnt
         rmdir mnt
