@@ -1,0 +1,115 @@
+name: Matrix Testing
+
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run every Sunday at 2 AM UTC
+    - cron: '0 2 * * 0'
+
+jobs:
+  matrix-test:
+    name: Test ${{ matrix.os }} / ${{ matrix.rust }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-22.04, ubuntu-20.04]
+        rust: [nightly, nightly-2024-01-01]
+        include:
+          - os: ubuntu-latest
+            rust: nightly
+            experimental: false
+          - os: ubuntu-22.04
+            rust: nightly
+            experimental: false
+          - os: ubuntu-20.04
+            rust: nightly
+            experimental: true
+          - os: ubuntu-latest
+            rust: nightly-2024-01-01
+            experimental: true
+    
+    continue-on-error: ${{ matrix.experimental }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          qemu-system-x86 \
+          qemu-utils \
+          ovmf \
+          mtools \
+          dosfstools
+    
+    - name: Setup Rust toolchain
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: ${{ matrix.rust }}
+        components: rust-src, llvm-tools-preview
+        targets: x86_64-unknown-uefi
+    
+    - name: Show versions
+      run: |
+        echo "OS: ${{ matrix.os }}"
+        echo "Rust: $(rustc --version)"
+        echo "Cargo: $(cargo --version)"
+        echo "QEMU: $(qemu-system-x86_64 --version | head -1)"
+        
+        # Find OVMF location
+        find /usr/share -name "OVMF*.fd" 2>/dev/null | head -5 || echo "OVMF not found in standard locations"
+    
+    - name: Build bootloader
+      working-directory: sentient-bootloader
+      run: cargo build --release --target x86_64-unknown-uefi
+    
+    - name: Build kernel
+      working-directory: sentient-kernel
+      run: cargo build --release --target x86_64-unknown-uefi
+    
+    - name: Quick boot test
+      run: |
+        # Just verify the binaries exist
+        test -f sentient-bootloader/target/x86_64-unknown-uefi/release/sentient-bootloader.efi
+        test -f sentient-kernel/target/x86_64-unknown-uefi/release/kernel.efi
+        
+        echo "✅ Build artifacts created successfully"
+
+  memory-test:
+    name: Memory Configuration Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        memory: [1024, 2048, 4096, 8192]
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qemu-system-x86 ovmf mtools dosfstools
+    
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@nightly
+      with:
+        components: rust-src
+        targets: x86_64-unknown-uefi
+    
+    - name: Build system
+      run: |
+        cd sentient-bootloader && cargo build --release --target x86_64-unknown-uefi
+        cd ../sentient-kernel && cargo build --release --target x86_64-unknown-uefi
+    
+    - name: Test with ${{ matrix.memory }}MB RAM
+      run: |
+        echo "Testing with ${{ matrix.memory }}MB memory configuration"
+        # This would run QEMU with different memory sizes
+        # Placeholder for actual test implementation

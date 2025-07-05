@@ -1,0 +1,150 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    name: Build Release Artifacts
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Get version from tag
+      id: get_version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          qemu-system-x86 \
+          ovmf \
+          mtools \
+          dosfstools \
+          zip
+    
+    - name: Setup Rust toolchain
+      uses: dtolnay/rust-toolchain@nightly
+      with:
+        components: rust-src
+        targets: x86_64-unknown-uefi
+    
+    - name: Build bootloader (release)
+      working-directory: sentient-bootloader
+      run: |
+        cargo build --release --target x86_64-unknown-uefi
+        cp target/x86_64-unknown-uefi/release/sentient-bootloader.efi ../BOOTX64.EFI
+    
+    - name: Build kernel (release)
+      working-directory: sentient-kernel
+      run: |
+        cargo build --release --target x86_64-unknown-uefi
+        cp target/x86_64-unknown-uefi/release/kernel.efi ../kernel.efi
+    
+    - name: Create bootable ISO
+      run: |
+        # Create ISO structure
+        mkdir -p iso/EFI/BOOT
+        cp BOOTX64.EFI iso/EFI/BOOT/
+        cp kernel.efi iso/
+        cp sentient-bootloader/esp/inference_config.json iso/
+        cp sentient-bootloader/esp/neuro_model.gguf iso/
+        
+        # Create ISO image
+        mkisofs -o sentientos-${{ steps.get_version.outputs.VERSION }}.iso \
+          -b EFI/BOOT/BOOTX64.EFI \
+          -no-emul-boot \
+          -boot-load-size 4 \
+          -boot-info-table \
+          -R -J -v \
+          iso/
+    
+    - name: Create USB image
+      run: |
+        # Create 256MB USB image
+        dd if=/dev/zero of=sentientos-${{ steps.get_version.outputs.VERSION }}-usb.img bs=1M count=256
+        
+        # Create GPT partition table
+        sgdisk -n 1:0:0 -t 1:ef00 sentientos-${{ steps.get_version.outputs.VERSION }}-usb.img
+        
+        # Format as FAT32
+        mkfs.vfat -F 32 sentientos-${{ steps.get_version.outputs.VERSION }}-usb.img
+        
+        # Mount and copy files
+        mkdir -p mnt
+        sudo mount -o loop,offset=1048576 sentientos-${{ steps.get_version.outputs.VERSION }}-usb.img mnt
+        sudo mkdir -p mnt/EFI/BOOT
+        sudo cp BOOTX64.EFI mnt/EFI/BOOT/
+        sudo cp kernel.efi mnt/
+        sudo cp sentient-bootloader/esp/inference_config.json mnt/
+        sudo cp sentient-bootloader/esp/neuro_model.gguf mnt/
+        sudo umount mnt
+        
+        # Compress USB image
+        zip sentientos-${{ steps.get_version.outputs.VERSION }}-usb.zip \
+          sentientos-${{ steps.get_version.outputs.VERSION }}-usb.img
+    
+    - name: Create release notes
+      run: |
+        cat > RELEASE_NOTES.md << EOF
+        # SentientOS ${{ steps.get_version.outputs.VERSION }}
+        
+        ## 🚀 Release Artifacts
+        
+        - **sentientos-${{ steps.get_version.outputs.VERSION }}.iso** - Bootable ISO image
+        - **sentientos-${{ steps.get_version.outputs.VERSION }}-usb.zip** - USB flash drive image (compressed)
+        - **BOOTX64.EFI** - UEFI bootloader binary
+        - **kernel.efi** - SentientOS kernel binary
+        
+        ## 📋 Installation
+        
+        ### ISO Image
+        \`\`\`bash
+        # Write to USB drive (replace /dev/sdX with your device)
+        sudo dd if=sentientos-${{ steps.get_version.outputs.VERSION }}.iso of=/dev/sdX bs=4M status=progress
+        \`\`\`
+        
+        ### USB Image
+        \`\`\`bash
+        # Extract and write to USB drive
+        unzip sentientos-${{ steps.get_version.outputs.VERSION }}-usb.zip
+        sudo dd if=sentientos-${{ steps.get_version.outputs.VERSION }}-usb.img of=/dev/sdX bs=4M status=progress
+        \`\`\`
+        
+        ### QEMU Testing
+        \`\`\`bash
+        qemu-system-x86_64 -bios /usr/share/ovmf/OVMF.fd -cdrom sentientos-${{ steps.get_version.outputs.VERSION }}.iso
+        \`\`\`
+        
+        ## 🧠 AI Model
+        
+        This release includes a placeholder GGUF model. For production use, replace \`neuro_model.gguf\` with your trained model.
+        
+        ## ⚠️ Requirements
+        
+        - UEFI firmware (most modern systems)
+        - x86_64 processor with SSE2
+        - Minimum 4GB RAM recommended
+        - 256MB free disk space
+        EOF
+    
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: SentientOS ${{ steps.get_version.outputs.VERSION }}
+        body_path: RELEASE_NOTES.md
+        draft: false
+        prerelease: false
+        files: |
+          sentientos-${{ steps.get_version.outputs.VERSION }}.iso
+          sentientos-${{ steps.get_version.outputs.VERSION }}-usb.zip
+          BOOTX64.EFI
+          kernel.efi

@@ -1,0 +1,37 @@
+{
+    "problemMatcher": [
+        {
+            "owner": "rustc",
+            "pattern": [
+                {
+                    "regexp": "^(warning|error)(\\[(\\w+)\\])?: (.*)$",
+                    "severity": 1,
+                    "code": 3,
+                    "message": 4
+                },
+                {
+                    "regexp": "^\\s*--> (.*):(\\d+):(\\d+)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3
+                }
+            ]
+        },
+        {
+            "owner": "clippy",
+            "pattern": [
+                {
+                    "regexp": "^(warning|error): (.*)$",
+                    "severity": 1,
+                    "message": 2
+                },
+                {
+                    "regexp": "^\\s*--> (.*):(\\d+):(\\d+)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3
+                }
+            ]
+        }
+    ]
+}

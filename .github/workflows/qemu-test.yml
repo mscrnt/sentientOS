@@ -1,0 +1,243 @@
+name: QEMU Boot Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  RUST_BACKTRACE: 1
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-and-test:
+    name: Build & Test UEFI Boot
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          qemu-system-x86 \
+          qemu-utils \
+          ovmf \
+          mtools \
+          dosfstools \
+          llvm \
+          clang \
+          lld
+    
+    - name: Setup Rust toolchain
+      uses: dtolnay/rust-toolchain@nightly
+      with:
+        components: rust-src, llvm-tools-preview
+        targets: x86_64-unknown-uefi
+    
+    - name: Setup problem matcher
+      run: echo "::add-matcher::.github/problem-matchers/rust.json"
+    
+    - name: Cache cargo registry
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+    
+    - name: Build bootloader
+      working-directory: sentient-bootloader
+      run: |
+        echo "🔨 Building SentientOS bootloader..."
+        cargo build --release --target x86_64-unknown-uefi
+        
+        # Verify the EFI file was created
+        if [ ! -f "target/x86_64-unknown-uefi/release/sentient-bootloader.efi" ]; then
+          echo "❌ Failed to build bootloader EFI"
+          exit 1
+        fi
+        
+        # Copy to ESP location
+        cp target/x86_64-unknown-uefi/release/sentient-bootloader.efi esp/EFI/BOOT/BOOTX64.EFI
+        echo "✅ Bootloader built successfully"
+    
+    - name: Build kernel
+      working-directory: sentient-kernel
+      run: |
+        echo "🔨 Building SentientOS kernel..."
+        cargo build --release --target x86_64-unknown-uefi
+        
+        # Verify the kernel EFI file was created
+        if [ ! -f "target/x86_64-unknown-uefi/release/kernel.efi" ]; then
+          echo "❌ Failed to build kernel EFI"
+          exit 1
+        fi
+        
+        # Copy to ESP location
+        cp target/x86_64-unknown-uefi/release/kernel.efi ../sentient-bootloader/esp/kernel.efi
+        echo "✅ Kernel built successfully"
+    
+    - name: Create bootable disk image
+      working-directory: sentient-bootloader
+      run: |
+        echo "💾 Creating bootable disk image..."
+        
+        # Create a 128MB disk image
+        dd if=/dev/zero of=boot.img bs=1M count=128
+        
+        # Format as FAT32
+        mkfs.vfat -F 32 boot.img
+        
+        # Mount and copy ESP contents
+        mkdir -p mnt
+        sudo mount -o loop boot.img mnt
+        sudo cp -r esp/* mnt/
+        
+        # Ensure directory structure
+        sudo mkdir -p mnt/EFI/BOOT
+        
+        # List contents for debugging
+        echo "📁 Disk contents:"
+        sudo find mnt -type f -exec ls -la {} \;
+        
+        sudo umount mnt
+        rmdir mnt
+        
+        echo "✅ Bootable disk image created"
+    
+    - name: Run QEMU boot test
+      working-directory: sentient-bootloader
+      timeout-minutes: 2
+      run: |
+        echo "🚀 Starting QEMU boot test..."
+        
+        # Copy OVMF firmware
+        cp /usr/share/OVMF/OVMF_CODE.fd .
+        cp /usr/share/OVMF/OVMF_VARS.fd .
+        
+        # Run QEMU in background with timeout
+        timeout 30s qemu-system-x86_64 \
+          -machine q35,accel=tcg \
+          -m 4096 \
+          -cpu max \
+          -drive if=pflash,format=raw,readonly=on,file=OVMF_CODE.fd \
+          -drive if=pflash,format=raw,file=OVMF_VARS.fd \
+          -drive format=raw,file=boot.img \
+          -nographic \
+          -serial file:serial.log \
+          -device isa-debug-exit,iobase=0xf4,iosize=0x04 \
+          || QEMU_EXIT_CODE=$?
+        
+        # QEMU exit codes: 33 = guest triple fault, 124 = timeout reached
+        if [ "${QEMU_EXIT_CODE}" = "124" ]; then
+          echo "⏱️ QEMU timeout reached (expected for successful boot)"
+        elif [ "${QEMU_EXIT_CODE}" = "0" ] || [ "${QEMU_EXIT_CODE}" = "33" ]; then
+          echo "🔍 QEMU exited with code: ${QEMU_EXIT_CODE}"
+        else
+          echo "❌ QEMU failed with unexpected exit code: ${QEMU_EXIT_CODE}"
+        fi
+    
+    - name: Analyze boot output
+      working-directory: sentient-bootloader
+      run: |
+        echo "📊 Analyzing serial output..."
+        
+        if [ ! -f serial.log ]; then
+          echo "❌ No serial output captured!"
+          exit 1
+        fi
+        
+        echo "📝 Serial output:"
+        echo "=================="
+        cat serial.log
+        echo "=================="
+        
+        # Check for critical boot phases
+        BOOT_PHASES=(
+          "Serial initialized"
+          "SentientOS UEFI Bootloader"
+          "Hardware detection complete"
+          "kernel.efi"
+          "Model loaded successfully"
+          "Starting kernel"
+          "SentientOS Kernel"
+          "AI subsystem initialized"
+        )
+        
+        MISSING_PHASES=()
+        for phase in "${BOOT_PHASES[@]}"; do
+          if ! grep -q "$phase" serial.log; then
+            MISSING_PHASES+=("$phase")
+          else
+            echo "✅ Found: $phase"
+          fi
+        done
+        
+        if [ ${#MISSING_PHASES[@]} -gt 0 ]; then
+          echo ""
+          echo "❌ Missing boot phases:"
+          for phase in "${MISSING_PHASES[@]}"; do
+            echo "  - $phase"
+          done
+          exit 1
+        fi
+        
+        echo ""
+        echo "🎉 All boot phases completed successfully!"
+    
+    - name: Upload artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: boot-artifacts
+        path: |
+          sentient-bootloader/serial.log
+          sentient-bootloader/boot.img
+          sentient-bootloader/esp/EFI/BOOT/BOOTX64.EFI
+          sentient-bootloader/esp/kernel.efi
+        retention-days: 7
+    
+    - name: Upload serial log
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: serial-output
+        path: sentient-bootloader/serial.log
+        retention-days: 7
+
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Rust toolchain
+      uses: dtolnay/rust-toolchain@nightly
+      with:
+        components: rustfmt, clippy
+        targets: x86_64-unknown-uefi
+    
+    - name: Check formatting (bootloader)
+      working-directory: sentient-bootloader
+      run: cargo fmt -- --check
+    
+    - name: Check formatting (kernel)
+      working-directory: sentient-kernel
+      run: cargo fmt -- --check
+    
+    - name: Run clippy (bootloader)
+      working-directory: sentient-bootloader
+      run: cargo clippy --target x86_64-unknown-uefi -- -D warnings
+    
+    - name: Run clippy (kernel)
+      working-directory: sentient-kernel
+      run: cargo clippy --target x86_64-unknown-uefi -- -D warnings
