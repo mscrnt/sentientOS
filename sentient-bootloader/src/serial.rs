@@ -1,4 +1,5 @@
 use core::fmt::{self, Write};
+use spin::Mutex;
 
 const COM1_BASE: u16 = 0x3F8;
 
@@ -13,69 +14,91 @@ const DIVISOR_MSB: u16 = COM1_BASE + 1;
 
 const LINE_STATUS_TRANSMIT_EMPTY: u8 = 0x20;
 
-pub struct SerialPort;
+pub struct SerialPort {
+    initialized: bool,
+}
 
-static mut SERIAL_PORT: SerialPort = SerialPort;
+impl SerialPort {
+    const fn new() -> Self {
+        SerialPort { initialized: false }
+    }
 
-pub fn init_serial() {
-    unsafe {
-        // Disable interrupts
-        outb(INTERRUPT_ENABLE, 0x00);
-        
-        // Enable DLAB (Divisor Latch Access Bit)
-        outb(LINE_CONTROL, 0x80);
-        
-        // Set divisor for 38400 baud (divisor = 3)
-        outb(DIVISOR_LSB, 0x03);
-        outb(DIVISOR_MSB, 0x00);
-        
-        // 8 bits, no parity, 1 stop bit (8N1)
-        outb(LINE_CONTROL, 0x03);
-        
-        // Enable FIFO, clear them, with 14-byte threshold
-        outb(FIFO_CONTROL, 0xC7);
-        
-        // Enable RTS/DSR
-        outb(MODEM_CONTROL, 0x03);
-        
-        // Test serial chip (send 0xAE and check if we get it back)
-        outb(COM1_BASE, 0xAE);
-        if inb(COM1_BASE) != 0xAE {
-            return; // Serial not working
+    fn init(&mut self) {
+        if self.initialized {
+            return;
         }
-        
-        // Serial is ready, enable OUT2
-        outb(MODEM_CONTROL, 0x0F);
-    }
-}
 
-pub fn serial_write_byte(byte: u8) {
-    unsafe {
-        // Wait for transmit buffer to be empty
-        while (inb(LINE_STATUS) & LINE_STATUS_TRANSMIT_EMPTY) == 0 {
-            core::hint::spin_loop();
+        unsafe {
+            // Disable interrupts
+            outb(INTERRUPT_ENABLE, 0x00);
+            
+            // Enable DLAB (Divisor Latch Access Bit)
+            outb(LINE_CONTROL, 0x80);
+            
+            // Set divisor for 38400 baud (divisor = 3)
+            outb(DIVISOR_LSB, 0x03);
+            outb(DIVISOR_MSB, 0x00);
+            
+            // 8 bits, no parity, 1 stop bit (8N1)
+            outb(LINE_CONTROL, 0x03);
+            
+            // Enable FIFO, clear them, with 14-byte threshold
+            outb(FIFO_CONTROL, 0xC7);
+            
+            // Enable RTS/DSR
+            outb(MODEM_CONTROL, 0x03);
+            
+            // Test serial chip (send 0xAE and check if we get it back)
+            outb(COM1_BASE, 0xAE);
+            if inb(COM1_BASE) != 0xAE {
+                return; // Serial not working
+            }
+            
+            // Serial is ready, enable OUT2
+            outb(MODEM_CONTROL, 0x0F);
         }
-        outb(DATA_REGISTER, byte);
-    }
-}
 
-pub fn serial_write_string(s: &str) {
-    for byte in s.bytes() {
-        serial_write_byte(byte);
+        self.initialized = true;
     }
-}
 
-pub fn serial_print(args: fmt::Arguments) {
-    unsafe {
-        let _ = SERIAL_PORT.write_fmt(args);
+    fn write_byte(&mut self, byte: u8) {
+        if !self.initialized {
+            self.init();
+        }
+
+        unsafe {
+            // Wait for transmit buffer to be empty
+            while (inb(LINE_STATUS) & LINE_STATUS_TRANSMIT_EMPTY) == 0 {
+                core::hint::spin_loop();
+            }
+            outb(DATA_REGISTER, byte);
+        }
+    }
+
+    fn write_string(&mut self, s: &str) {
+        for byte in s.bytes() {
+            self.write_byte(byte);
+        }
     }
 }
 
 impl Write for SerialPort {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        serial_write_string(s);
+        self.write_string(s);
         Ok(())
     }
+}
+
+// Global serial port protected by a mutex
+static SERIAL_PORT: Mutex<SerialPort> = Mutex::new(SerialPort::new());
+
+pub fn init_serial() {
+    SERIAL_PORT.lock().init();
+}
+
+
+pub fn serial_print(args: fmt::Arguments) {
+    SERIAL_PORT.lock().write_fmt(args).unwrap();
 }
 
 #[macro_export]
