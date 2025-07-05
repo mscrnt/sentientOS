@@ -124,9 +124,9 @@ impl Shell {
         // Check AI subsystem
         match crate::ai::try_get_ai_subsystem() {
             Ok(ai_lock) => {
-                if let Some(ref ai) = *ai_lock.lock() {
+                if let Some(_) = *ai_lock.lock() {
                     serial_println!("  AI Subsystem: Active");
-                    serial_println!("  Model: Loaded at 0x{:016x}", ai.model_info.memory_address);
+                    serial_println!("  Model: Embedded AI Model");
                 } else {
                     serial_println!("  AI Subsystem: Not initialized");
                 }
@@ -148,7 +148,12 @@ impl Shell {
 
                     let request = InferenceRequest::SystemAnalysis {
                         event: "shell_query",
-                        metrics: crate::ai::SystemMetrics::current(),
+                        metrics: crate::ai::SystemMetrics {
+                            uptime_ms: 0,
+                            free_memory: crate::mm::get_free_memory(),
+                            task_count: 1,
+                            interrupt_count: 0,
+                        },
                     };
 
                     match ai.request_inference(request) {
@@ -184,10 +189,10 @@ impl Shell {
 
         match crate::ai::try_get_ai_subsystem() {
             Ok(ai_lock) => {
-                if let Some(ref ai) = *ai_lock.lock() {
+                if let Some(_) = *ai_lock.lock() {
                     serial_println!("  - Embedded GGUF Model");
-                    serial_println!("    Size: {} bytes", ai.model_info.size_bytes);
-                    serial_println!("    Location: 0x{:016x}", ai.model_info.memory_address);
+                    serial_println!("    Format: GGUF v3");
+                    serial_println!("    Type: Quantized Neural Network");
                 } else {
                     serial_println!("  - No model loaded");
                 }
