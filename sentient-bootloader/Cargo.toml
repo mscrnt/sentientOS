@@ -5,7 +5,7 @@ edition = "2021"
 authors = ["SentientOS Team"]
 
 [dependencies]
-uefi = "0.20"
+uefi = "0.35"
 uefi-services = "0.17"
 log = { version = "0.4", default-features = false }
 serde = { version = "1.0", default-features = false, features = ["derive"] }
