@@ -146,11 +146,11 @@ fn get_boot_info_address(system_table: &SystemTable<Boot>) -> Option<u64> {
             }
         } else if found {
             // Parsing hex digits
-            if c >= b'0' && c <= b'9' {
+            if c.is_ascii_digit() {
                 addr = addr * 16 + (c - b'0') as u64;
-            } else if c >= b'a' && c <= b'f' {
+            } else if (b'a'..=b'f').contains(&c) {
                 addr = addr * 16 + (c - b'a' + 10) as u64;
-            } else if c >= b'A' && c <= b'F' {
+            } else if (b'A'..=b'F').contains(&c) {
                 addr = addr * 16 + (c - b'A' + 10) as u64;
             } else {
                 // End of hex number
