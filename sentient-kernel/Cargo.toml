@@ -26,3 +26,7 @@ panic = "abort"
 
 [profile.dev]
 panic = "abort"
+
+[features]
+default = []
+serial-debug = []  # Enable serial console for debugging (security risk!)

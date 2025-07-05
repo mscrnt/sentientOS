@@ -21,15 +21,22 @@ if ! command -v mmd &> /dev/null; then
     exit 1
 fi
 
+# Check for debug mode
+DEBUG_MODE=""
+if [ "$1" = "--debug" ]; then
+    DEBUG_MODE="--features serial-debug"
+    echo "Debug mode enabled - serial output will be available"
+fi
+
 # Build if needed
 if [ ! -f "target/x86_64-unknown-uefi/debug/sentient-bootloader.efi" ]; then
     echo "Building bootloader..."
-    cargo build --target x86_64-unknown-uefi
+    cargo build --target x86_64-unknown-uefi $DEBUG_MODE
 fi
 
 if [ ! -f "../sentient-kernel/target/x86_64-unknown-uefi/debug/sentient-kernel.efi" ]; then
     echo "Building kernel..."
-    (cd ../sentient-kernel && cargo build --target x86_64-unknown-uefi)
+    (cd ../sentient-kernel && cargo build --target x86_64-unknown-uefi $DEBUG_MODE)
 fi
 
 # Create disk image
@@ -71,4 +78,10 @@ fi
 echo "Boot disk created: boot.img"
 echo ""
 echo "To test with QEMU:"
-echo "  qemu-system-x86_64 -m 4096 -bios /usr/share/ovmf/OVMF.fd -drive format=raw,file=boot.img -nographic"
+if [ "$1" = "--debug" ]; then
+    echo "  qemu-system-x86_64 -m 4096 -bios /usr/share/ovmf/OVMF.fd -drive format=raw,file=boot.img -serial mon:stdio -nographic"
+else
+    echo "  qemu-system-x86_64 -m 4096 -bios /usr/share/ovmf/OVMF.fd -drive format=raw,file=boot.img -nographic"
+    echo ""
+    echo "Note: Serial output is disabled. Use './create-boot-disk.sh --debug' to enable serial debugging."
+fi

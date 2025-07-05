@@ -21,6 +21,7 @@ SentientOS is a bare-metal AI substrate designed to optimize hardware for AI inf
 - **AI Subsystem**: Built-in AI inference engine with model management
 - **System Analysis**: AI-driven system monitoring and optimization
 - **Integrated Shell**: Direct kernel shell interface for debugging
+- **Security-First Design**: Serial console disabled by default for production security
 
 ### 🐚 SentientShell
 - **AI Integration**: Native support for Ollama and Stable Diffusion APIs
@@ -83,12 +84,16 @@ SentientOS/
 ```bash
 cd sentient-bootloader
 cargo build --target x86_64-unknown-uefi
+# For debugging with serial output:
+# cargo build --target x86_64-unknown-uefi --features serial-debug
 ```
 
 #### Build Kernel
 ```bash
 cd sentient-kernel
 cargo build --target x86_64-unknown-uefi
+# For debugging with serial output:
+# cargo build --target x86_64-unknown-uefi --features serial-debug
 ```
 
 #### Build Shell
@@ -165,6 +170,21 @@ The bootloader passes system information to the kernel via JSON:
 Supports integration with:
 - **Ollama**: Local LLM server (default: http://localhost:11434)
 - **Stable Diffusion WebUI**: Image generation (default: http://localhost:7860)
+
+## Security
+
+### Serial Console
+By default, SentientOS builds with the serial console **disabled** to prevent potential security vulnerabilities. Serial ports can provide:
+- Unauthorized debug access
+- Potential for information disclosure
+- Bypass of normal security controls
+
+To enable serial output for debugging:
+```bash
+cargo build --features serial-debug
+```
+
+**⚠️ WARNING**: Never deploy production systems with `serial-debug` enabled!
 
 ## License
 

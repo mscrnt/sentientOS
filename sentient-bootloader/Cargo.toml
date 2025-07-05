@@ -23,3 +23,7 @@ panic = "abort"
 
 [build-dependencies]
 anyhow = "1.0"
+
+[features]
+default = []
+serial-debug = []  # Enable serial console for debugging (security risk!)

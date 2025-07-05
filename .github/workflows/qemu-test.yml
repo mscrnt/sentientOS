@@ -56,7 +56,7 @@ jobs:
       working-directory: sentient-bootloader
       run: |
         echo "🔨 Building SentientOS bootloader..."
-        cargo build --release --target x86_64-unknown-uefi
+        cargo build --release --target x86_64-unknown-uefi --features serial-debug
         
         # Verify the EFI file was created
         if [ ! -f "target/x86_64-unknown-uefi/release/sentient-bootloader.efi" ]; then
@@ -73,7 +73,7 @@ jobs:
       working-directory: sentient-kernel
       run: |
         echo "🔨 Building SentientOS kernel..."
-        cargo build --release --target x86_64-unknown-uefi
+        cargo build --release --target x86_64-unknown-uefi --features serial-debug
         
         # Verify the kernel EFI file was created
         if [ ! -f "target/x86_64-unknown-uefi/release/kernel.efi" ]; then

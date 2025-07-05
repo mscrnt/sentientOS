@@ -1,29 +1,25 @@
-use core::fmt::{self, Write};
+use core::fmt;
+#[cfg(feature = "serial-debug")]
+use core::fmt::Write;
+
+#[cfg(feature = "serial-debug")]
 use spin::Mutex;
 
+#[cfg(feature = "serial-debug")]
 const COM1_BASE: u16 = 0x3F8;
-#[allow(dead_code)]
+#[cfg(feature = "serial-debug")]
 const DATA_REGISTER: u16 = COM1_BASE;
-#[allow(dead_code)]
-const INTERRUPT_ENABLE: u16 = COM1_BASE + 1;
-#[allow(dead_code)]
-const FIFO_CONTROL: u16 = COM1_BASE + 2;
-#[allow(dead_code)]
-const LINE_CONTROL: u16 = COM1_BASE + 3;
-#[allow(dead_code)]
-const MODEM_CONTROL: u16 = COM1_BASE + 4;
+#[cfg(feature = "serial-debug")]
 const LINE_STATUS_REGISTER: u16 = COM1_BASE + 5;
-#[allow(dead_code)]
-const DIVISOR_LSB: u16 = COM1_BASE;
-#[allow(dead_code)]
-const DIVISOR_MSB: u16 = COM1_BASE + 1;
-
+#[cfg(feature = "serial-debug")]
 const LINE_STATUS_TRANSMIT_EMPTY: u8 = 0x20;
 
+#[cfg(feature = "serial-debug")]
 pub struct SerialPort {
     base: u16,
 }
 
+#[cfg(feature = "serial-debug")]
 impl SerialPort {
     const fn new(base: u16) -> Self {
         SerialPort { base }
@@ -52,6 +48,7 @@ impl SerialPort {
     }
 }
 
+#[cfg(feature = "serial-debug")]
 impl Write for SerialPort {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         for byte in s.bytes() {
@@ -61,14 +58,23 @@ impl Write for SerialPort {
     }
 }
 
+#[cfg(feature = "serial-debug")]
 static SERIAL1: Mutex<SerialPort> = Mutex::new(SerialPort::new(COM1_BASE));
 
+// Public API - always available but no-ops when serial-debug is disabled
+
 pub fn init() {
+    #[cfg(feature = "serial-debug")]
     SERIAL1.lock().init();
 }
 
 pub fn _print(args: fmt::Arguments) {
+    #[cfg(feature = "serial-debug")]
     SERIAL1.lock().write_fmt(args).unwrap();
+    
+    // When serial is disabled, just drop the output
+    #[cfg(not(feature = "serial-debug"))]
+    let _ = args;
 }
 
 #[macro_export]
@@ -93,6 +99,7 @@ pub fn println(args: fmt::Arguments) {
 }
 
 pub fn try_read_char() -> Option<char> {
+    #[cfg(feature = "serial-debug")]
     unsafe {
         let line_status = inb(LINE_STATUS_REGISTER);
         if line_status & 0x01 != 0 {
@@ -103,8 +110,12 @@ pub fn try_read_char() -> Option<char> {
             None
         }
     }
+    
+    #[cfg(not(feature = "serial-debug"))]
+    None
 }
 
+#[cfg(feature = "serial-debug")]
 #[inline]
 unsafe fn outb(port: u16, value: u8) {
     core::arch::asm!(
@@ -115,6 +126,7 @@ unsafe fn outb(port: u16, value: u8) {
     );
 }
 
+#[cfg(feature = "serial-debug")]
 #[inline]
 unsafe fn inb(port: u16) -> u8 {
     let value: u8;
