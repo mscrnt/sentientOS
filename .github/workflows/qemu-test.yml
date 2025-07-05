@@ -184,12 +184,7 @@ jobs:
         # Create test script for shell commands
         # Note: We only test basic shell functionality in CI
         # AI endpoints (Ollama/SD) are only available on local dev network
-        cat > test_commands.txt << 'EOF'
-help
-status
-models
-exit
-EOF
+        echo -e "help\nstatus\nmodels\nexit" > test_commands.txt
         
         # Run QEMU with test commands as input
         timeout 45s qemu-system-x86_64 \
