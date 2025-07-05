@@ -1,5 +1,7 @@
 # SentientOS
 
+[![QEMU Boot Test](https://github.com/mscrnt/sentientOS/actions/workflows/qemu-test.yml/badge.svg)](https://github.com/mscrnt/sentientOS/actions/workflows/qemu-test.yml)
+
 🧠 **AI-centric operating system with UEFI bootloader for next-gen AI runtime**
 
 ## Overview
