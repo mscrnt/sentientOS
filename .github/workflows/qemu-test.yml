@@ -65,6 +65,7 @@ jobs:
         fi
         
         # Copy to ESP location
+        mkdir -p esp/EFI/BOOT
         cp target/x86_64-unknown-uefi/release/sentient-bootloader.efi esp/EFI/BOOT/BOOTX64.EFI
         echo "✅ Bootloader built successfully"
     
