@@ -31,29 +31,29 @@ impl SerialPort {
         unsafe {
             // Disable interrupts
             outb(INTERRUPT_ENABLE, 0x00);
-            
+
             // Enable DLAB (Divisor Latch Access Bit)
             outb(LINE_CONTROL, 0x80);
-            
+
             // Set divisor for 38400 baud (divisor = 3)
             outb(DIVISOR_LSB, 0x03);
             outb(DIVISOR_MSB, 0x00);
-            
+
             // 8 bits, no parity, 1 stop bit (8N1)
             outb(LINE_CONTROL, 0x03);
-            
+
             // Enable FIFO, clear them, with 14-byte threshold
             outb(FIFO_CONTROL, 0xC7);
-            
+
             // Enable RTS/DSR
             outb(MODEM_CONTROL, 0x03);
-            
+
             // Test serial chip (send 0xAE and check if we get it back)
             outb(COM1_BASE, 0xAE);
             if inb(COM1_BASE) != 0xAE {
                 return; // Serial not working
             }
-            
+
             // Serial is ready, enable OUT2
             outb(MODEM_CONTROL, 0x0F);
         }
@@ -95,7 +95,6 @@ static SERIAL_PORT: Mutex<SerialPort> = Mutex::new(SerialPort::new());
 pub fn init_serial() {
     SERIAL_PORT.lock().init();
 }
-
 
 pub fn serial_print(args: fmt::Arguments) {
     SERIAL_PORT.lock().write_fmt(args).unwrap();

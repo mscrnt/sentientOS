@@ -1,6 +1,6 @@
-use alloc::vec::Vec;
 use alloc::string::String;
-use serde::{Serialize, Deserialize};
+use alloc::vec::Vec;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BootInfo {

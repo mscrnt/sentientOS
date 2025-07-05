@@ -1,7 +1,7 @@
-use alloc::vec::Vec;
-use alloc::string::String;
-use serde::{Serialize, Deserialize};
 use crate::serial_println;
+use alloc::string::String;
+use alloc::vec::Vec;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BootInfo {
@@ -84,11 +84,11 @@ pub enum MemoryType {
 /// Parse BootInfo from physical address provided by bootloader
 pub unsafe fn parse_boot_info(addr: u64) -> &'static BootInfo {
     serial_println!("Parsing BootInfo from 0x{:016x}", addr);
-    
+
     // Read up to 64KB for the JSON data
     let max_size = 65536;
     let data = core::slice::from_raw_parts(addr as *const u8, max_size);
-    
+
     // Find null terminator
     let mut json_len = 0;
     for i in 0..max_size {
@@ -97,17 +97,17 @@ pub unsafe fn parse_boot_info(addr: u64) -> &'static BootInfo {
             break;
         }
     }
-    
+
     if json_len == 0 {
         panic!("Empty BootInfo at address 0x{:016x}", addr);
     }
-    
+
     let json_str = core::str::from_utf8_unchecked(&data[..json_len]);
     serial_println!("BootInfo JSON size: {} bytes", json_len);
-    
+
     // Parse JSON into static storage
     static mut BOOT_INFO_STORAGE: Option<BootInfo> = None;
-    
+
     match serde_json::from_str(json_str) {
         Ok(boot_info) => {
             BOOT_INFO_STORAGE = Some(boot_info);
@@ -123,11 +123,11 @@ impl BootInfo {
     pub fn validate_model(&self) -> bool {
         self.model.memory_address != 0 && self.model.size_bytes > 0
     }
-    
+
     pub fn has_ai_acceleration(&self) -> bool {
-        self.hardware.cpu_features.avx512 ||
-        self.hardware.cpu_features.amx ||
-        !self.hardware.gpu_devices.is_empty() ||
-        self.hardware.npu_available
+        self.hardware.cpu_features.avx512
+            || self.hardware.cpu_features.amx
+            || !self.hardware.gpu_devices.is_empty()
+            || self.hardware.npu_available
     }
 }

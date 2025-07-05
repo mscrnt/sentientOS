@@ -1,9 +1,9 @@
-use uefi::prelude::*;
-use uefi::table::boot::{MemoryType as UefiMemoryType};
 use crate::boot_info::BootInfo;
+use crate::serial_println;
 use linked_list_allocator::LockedHeap;
 use spin::Mutex;
-use crate::serial_println;
+use uefi::prelude::*;
+use uefi::table::boot::MemoryType as UefiMemoryType;
 
 mod frame_allocator;
 // pub use frame_allocator::FrameAllocator;
@@ -25,25 +25,25 @@ struct MemoryStats {
 
 pub fn init(system_table: &SystemTable<Boot>, boot_info: &BootInfo) {
     serial_println!("🔧 Initializing memory management...");
-    
+
     // Get UEFI memory map
     let mmap_size = system_table.boot_services().memory_map_size();
     let mut mmap_buf = alloc::vec![0u8; mmap_size.map_size + 10 * mmap_size.entry_size];
-    
+
     let mmap = system_table
         .boot_services()
         .memory_map(&mut mmap_buf)
         .expect("Failed to get memory map");
-    
+
     // Find suitable memory for heap
     let mut heap_start = None;
     let mut heap_size = 0u64;
     let mut total_memory = 0u64;
-    
+
     for desc in mmap.entries() {
         if desc.ty == UefiMemoryType::CONVENTIONAL {
             total_memory += desc.page_count * 4096;
-            
+
             // Find a good region for heap (at least 64MB)
             if heap_start.is_none() && desc.page_count * 4096 >= 64 * 1024 * 1024 {
                 heap_start = Some(desc.phys_start);
@@ -51,30 +51,33 @@ pub fn init(system_table: &SystemTable<Boot>, boot_info: &BootInfo) {
             }
         }
     }
-    
+
     let heap_start = heap_start.expect("No suitable memory for heap");
-    
+
     serial_println!("  Total memory: {} MB", total_memory / (1024 * 1024));
     serial_println!("  Heap start: 0x{:x}", heap_start);
     serial_println!("  Heap size: {} MB", heap_size / (1024 * 1024));
-    
+
     // Reserve memory for AI model
     let model_size = boot_info.model.size_bytes;
-    serial_println!("  Model reserved: {} MB at 0x{:x}", 
-        model_size / (1024 * 1024), 
+    serial_println!(
+        "  Model reserved: {} MB at 0x{:x}",
+        model_size / (1024 * 1024),
         boot_info.model.memory_address
     );
-    
+
     // Initialize heap
     unsafe {
-        ALLOCATOR.lock().init(heap_start as *mut u8, heap_size as usize);
+        ALLOCATOR
+            .lock()
+            .init(heap_start as *mut u8, heap_size as usize);
     }
-    
+
     // Update stats
     let mut stats = MEMORY_STATS.lock();
     stats.total_memory = total_memory;
     stats.reserved_for_model = model_size;
-    
+
     serial_println!("✅ Memory management initialized");
 }
 
@@ -85,13 +88,13 @@ pub fn get_free_memory() -> u64 {
 
 pub fn run_memory_optimizer() {
     serial_println!("🔧 Running AI-triggered memory optimization...");
-    
+
     // In a real implementation:
     // - Compact heap
     // - Free unused pages
     // - Defragment memory
     // - Update page tables
-    
+
     serial_println!("✅ Memory optimization complete");
 }
 

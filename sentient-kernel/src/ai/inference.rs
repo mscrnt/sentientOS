@@ -1,5 +1,5 @@
+use crate::ai::{PowerMode, SchedulerHints, SystemMetrics};
 use alloc::string::String;
-use crate::ai::{SchedulerHints, PowerMode, SystemMetrics};
 
 #[derive(Debug, Clone)]
 pub enum InferenceRequest {

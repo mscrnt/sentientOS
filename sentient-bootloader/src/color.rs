@@ -1,6 +1,6 @@
+use crate::serial_println;
 use uefi::proto::console::text::{Color, Output};
 use uefi::CStr16;
-use crate::{serial_println};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Phase {
@@ -21,7 +21,7 @@ impl Phase {
             Phase::Error => Color::Red,
         }
     }
-    
+
     fn symbol(&self) -> &'static str {
         match self {
             Phase::Boot => "🔵",
@@ -31,7 +31,7 @@ impl Phase {
             Phase::Error => "🔴",
         }
     }
-    
+
     fn name(&self) -> &'static str {
         match self {
             Phase::Boot => "BOOT",
@@ -46,19 +46,19 @@ impl Phase {
 pub fn print_phase(stdout: &mut Output, phase: Phase, message: &str) {
     // Display on VGA
     stdout.set_color(phase.color(), Color::Black).unwrap();
-    
+
     let phase_str = alloc::format!("[{}] ", phase.name());
     let phase_u16 = crate::str_to_cstr16(&phase_str);
     let phase_cstr = CStr16::from_u16_with_nul(&phase_u16).unwrap();
     stdout.output_string(phase_cstr).unwrap();
-    
+
     stdout.reset(false).unwrap();
-    
+
     let msg_str = alloc::format!("{}\r\n", message);
     let msg_u16 = crate::str_to_cstr16(&msg_str);
     let msg_cstr = CStr16::from_u16_with_nul(&msg_u16).unwrap();
     stdout.output_string(msg_cstr).unwrap();
-    
+
     // Also send to serial
     serial_println!("{} [{}] {}", phase.symbol(), phase.name(), message);
 }

@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
 use crate::boot_info::RuntimeType;
 use alloc::string::String;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InferenceConfig {

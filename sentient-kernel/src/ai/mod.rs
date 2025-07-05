@@ -1,16 +1,16 @@
 use crate::boot_info::{BootInfo, InferenceConfig};
 use crate::serial_println;
-use alloc::string::String;
 use alloc::collections::VecDeque;
-use spin::Mutex;
+use alloc::string::String;
 use core::panic::PanicInfo;
+use spin::Mutex;
 
-mod runtime;
 mod inference;
+mod runtime;
 mod scheduler;
 
-use runtime::ModelRuntime;
 pub use inference::{InferenceRequest, InferenceResponse};
+use runtime::ModelRuntime;
 pub use scheduler::SchedulerHints;
 
 static AI_SUBSYSTEM: Mutex<Option<AISubsystem>> = Mutex::new(None);
@@ -33,7 +33,10 @@ pub struct AISubsystem {
 }
 
 impl AISubsystem {
-    pub fn request_inference(&mut self, request: InferenceRequest) -> Result<InferenceResponse, String> {
+    pub fn request_inference(
+        &mut self,
+        request: InferenceRequest,
+    ) -> Result<InferenceResponse, String> {
         self.runtime.infer(&request, &self.config)
     }
 }
@@ -47,22 +50,22 @@ pub enum PowerMode {
 
 pub fn init(boot_info: &BootInfo) -> Result<(), String> {
     serial_println!("🧠 Initializing AI subsystem...");
-    
+
     let model_info = &boot_info.model;
     let config = &boot_info.config;
-    
+
     // Validate model
     if model_info.memory_address == 0 {
         return Err(String::from("Model not loaded in memory"));
     }
-    
+
     let runtime = ModelRuntime::new(model_info)?;
-    
+
     serial_println!("  Model: {} ({})", model_info.name, model_info.format);
     serial_println!("  Location: 0x{:016x}", model_info.memory_address);
     serial_println!("  Size: {} MB", model_info.size_bytes / (1024 * 1024));
     serial_println!("  Runtime: {:?}", config.runtime);
-    
+
     let subsystem = AISubsystem {
         runtime,
         config: config.clone(),
@@ -71,15 +74,15 @@ pub fn init(boot_info: &BootInfo) -> Result<(), String> {
         inference_count: 0,
         power_mode: PowerMode::Balanced,
     };
-    
+
     *AI_SUBSYSTEM.lock() = Some(subsystem);
-    
+
     // Submit initial system analysis request
     submit_inference(InferenceRequest::SystemAnalysis {
         event: "kernel_boot",
         metrics: SystemMetrics::default(),
     })?;
-    
+
     Ok(())
 }
 
@@ -141,14 +144,16 @@ fn execute_ai_command(cmd: &str) {
 }
 
 pub fn should_enter_low_power() -> bool {
-    AI_SUBSYSTEM.lock()
+    AI_SUBSYSTEM
+        .lock()
         .as_ref()
         .map(|ai| matches!(ai.power_mode, PowerMode::LowPower))
         .unwrap_or(false)
 }
 
 pub fn get_scheduler_hints() -> SchedulerHints {
-    AI_SUBSYSTEM.lock()
+    AI_SUBSYSTEM
+        .lock()
         .as_ref()
         .map(|ai| ai.scheduler_hints.clone())
         .unwrap_or_default()
@@ -163,15 +168,15 @@ pub fn analyze_panic(panic_info: &PanicInfo) {
             location.column(),
             panic_info.message()
         );
-        
+
         serial_println!("🔍 AI: Analyzing panic: {}", panic_data);
-        
+
         let _ = submit_inference(InferenceRequest::PanicAnalysis {
             location: "kernel", // Use static string to avoid lifetime issues
             line: location.line(),
             message: panic_data,
         });
-        
+
         // Try to process the analysis immediately
         process_pending_inferences();
     }

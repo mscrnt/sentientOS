@@ -13,7 +13,7 @@ impl FrameAllocator {
             memory_end: end,
         }
     }
-    
+
     pub fn allocate_frame(&mut self) -> Option<PhysFrame<Size4KiB>> {
         if self.next_free < self.memory_end {
             let frame = PhysFrame::containing_address(self.next_free);
@@ -23,7 +23,7 @@ impl FrameAllocator {
             None
         }
     }
-    
+
     pub fn deallocate_frame(&mut self, _frame: PhysFrame<Size4KiB>) {
         // Simple allocator doesn't support deallocation
         // In a real implementation, maintain a free list
