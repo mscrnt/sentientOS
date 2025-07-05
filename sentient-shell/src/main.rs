@@ -71,10 +71,13 @@ pub struct ShellState {
 
 impl ShellState {
     pub fn new() -> Self {
-        let ai_client = ai::AiClient::new(
-            "http://192.168.69.197:11434".to_string(),
-            "http://192.168.69.197:7860".to_string(),
-        );
+        // Allow overriding URLs via environment variables for testing
+        let ollama_url = std::env::var("OLLAMA_URL")
+            .unwrap_or_else(|_| "http://192.168.69.197:11434".to_string());
+        let sd_url = std::env::var("SD_URL")
+            .unwrap_or_else(|_| "http://192.168.69.197:7860".to_string());
+            
+        let ai_client = ai::AiClient::new(ollama_url, sd_url);
         
         #[cfg(feature = "local-inference")]
         let local_inference = inference::LocalInference::new().ok();

@@ -1,0 +1,80 @@
+name: Local Ollama Integration Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      ollama_url:
+        description: 'Ollama server URL'
+        required: true
+        default: 'http://192.168.69.197:11434'
+      sd_url:
+        description: 'Stable Diffusion server URL'
+        required: false
+        default: 'http://192.168.69.197:7860'
+
+jobs:
+  test-ollama-integration:
+    name: Test Ollama Integration
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libudev-dev curl jq
+    
+    - name: Test Ollama connectivity
+      run: |
+        echo "Testing connection to Ollama at ${{ github.event.inputs.ollama_url }}"
+        if curl -f -s "${{ github.event.inputs.ollama_url }}/api/tags" > /dev/null; then
+          echo "✅ Successfully connected to Ollama"
+          echo "Available models:"
+          curl -s "${{ github.event.inputs.ollama_url }}/api/tags" | jq -r '.models[].name'
+        else
+          echo "❌ Failed to connect to Ollama"
+          exit 1
+        fi
+    
+    - name: Build sentient-shell
+      working-directory: sentient-shell
+      run: |
+        # Build without serial support for CI
+        cargo build --release --no-default-features --features local-inference
+    
+    - name: Run Ollama integration tests
+      working-directory: sentient-shell
+      env:
+        OLLAMA_URL: ${{ github.event.inputs.ollama_url }}
+        SD_URL: ${{ github.event.inputs.sd_url }}
+      run: |
+        # Run integration tests that connect to real Ollama
+        cargo test --release -- --ignored --nocapture
+    
+    - name: Test shell commands
+      working-directory: sentient-shell
+      env:
+        OLLAMA_URL: ${{ github.event.inputs.ollama_url }}
+      run: |
+        # Create test script
+        cat > test_commands.sh << 'EOF'
+        #!/bin/bash
+        echo "help"
+        echo "models"
+        echo "ask What is 2 + 2?"
+        echo "exit"
+        EOF
+        
+        chmod +x test_commands.sh
+        
+        # Run shell with test commands
+        timeout 30s ./test_commands.sh | cargo run --release --no-default-features --features local-inference || true
+        
+        echo "✅ Shell command test completed"

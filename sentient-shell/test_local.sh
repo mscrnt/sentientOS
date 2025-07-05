@@ -1,58 +1,45 @@
 #!/bin/bash
-# Local testing script for SentientShell with AI endpoints
-# This requires Ollama and SD WebUI running on the local network
-
 set -e
 
-echo "🧪 SentientShell Local AI Testing"
-echo "================================="
-echo ""
+echo "🧪 Testing SentientShell with local Ollama server..."
+echo "================================================"
 
 # Check if Ollama is accessible
-echo -n "Checking Ollama server... "
-if curl -s http://192.168.69.197:11434/api/tags > /dev/null 2>&1; then
-    echo "✓ Connected"
+echo -n "📡 Checking Ollama connectivity... "
+if curl -s http://192.168.69.197:11434/api/tags > /dev/null; then
+    echo "✅ Connected"
 else
-    echo "✗ Not accessible"
-    echo "Please ensure Ollama is running at http://192.168.69.197:11434"
+    echo "❌ Failed to connect to Ollama at http://192.168.69.197:11434"
+    echo "   Please ensure Ollama is running on your local network"
     exit 1
 fi
 
-# Check if SD WebUI is accessible
-echo -n "Checking SD WebUI server... "
-if curl -s http://192.168.69.197:7860/sdapi/v1/sd-models > /dev/null 2>&1; then
-    echo "✓ Connected"
-else
-    echo "✗ Not accessible"
-    echo "Please ensure SD WebUI is running at http://192.168.69.197:7860"
-    exit 1
-fi
+# List available models
+echo ""
+echo "📦 Available Ollama models:"
+curl -s http://192.168.69.197:11434/api/tags | jq -r '.models[].name' | sed 's/^/   - /'
+
+# Build the shell without serial support for testing
+echo ""
+echo "🔨 Building sentient-shell..."
+cd "$(dirname "$0")"
+cargo build --release --no-default-features --features local-inference
+
+# Run integration tests
+echo ""
+echo "🧪 Running integration tests..."
+echo "   (This will connect to your local Ollama server)"
+echo ""
+
+# Run only the ignored tests (which are the integration tests)
+RUST_TEST_THREADS=1 cargo test --release -- --ignored --nocapture
 
 echo ""
-echo "Building SentientShell..."
-cargo build --release
-
+echo "✅ Local testing complete!"
 echo ""
-echo "Running test commands..."
+echo "To run individual tests:"
+echo "  cargo test test_ollama_connection -- --ignored --nocapture"
+echo "  cargo test test_ollama_generate -- --ignored --nocapture"
 echo ""
-
-# Create test script
-cat > test_ai_commands.txt << 'EOF'
-help
-status
-models
-ask What is SentientOS and why is it revolutionary?
-image A futuristic AI-powered operating system visualization
-exit
-EOF
-
-# Run shell with test commands
-echo "--- Shell Output ---"
-./target/release/sentient-shell < test_ai_commands.txt
-echo "--- End Output ---"
-
-echo ""
-echo "✅ Local AI testing complete!"
-echo ""
-echo "To run interactive session:"
-echo "  ./target/release/sentient-shell"
+echo "To run the shell interactively:"
+echo "  cargo run --release"

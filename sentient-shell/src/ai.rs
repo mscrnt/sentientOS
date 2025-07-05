@@ -15,18 +15,21 @@ pub struct ImageInfo {
 }
 
 // Ollama API structures
-#[derive(Serialize)]
-struct OllamaGenerateRequest {
-    model: String,
-    prompt: String,
-    stream: bool,
+#[derive(Serialize, Default)]
+pub struct OllamaRequest {
+    pub model: String,
+    pub prompt: String,
+    pub stream: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub options: Option<serde_json::Value>,
 }
 
 #[derive(Deserialize)]
-struct OllamaGenerateResponse {
-    response: String,
-    done: bool,
+pub struct OllamaResponse {
+    pub response: String,
+    pub done: bool,
 }
+
 
 #[derive(Deserialize)]
 struct OllamaModel {
@@ -109,6 +112,31 @@ impl AiClient {
         Ok(models.into_iter().next())
     }
     
+    pub fn list_models(&self) -> Result<Vec<String>> {
+        self.list_ollama_models()
+    }
+    
+    pub fn query_ollama(&self, request: &OllamaRequest) -> Result<String> {
+        let url = format!("{}/api/generate", self.ollama_url);
+        
+        let resp = self.client
+            .post(&url)
+            .json(request)
+            .timeout(Duration::from_secs(30))
+            .send()
+            .context("Failed to send request to Ollama")?;
+            
+        if !resp.status().is_success() {
+            let error_text = resp.text().unwrap_or_else(|_| "Unknown error".to_string());
+            anyhow::bail!("Ollama API error: {}", error_text);
+        }
+        
+        let ollama_resp: OllamaResponse = resp.json()
+            .context("Failed to parse Ollama response")?;
+            
+        Ok(ollama_resp.response)
+    }
+    
     pub fn list_ollama_models(&self) -> Result<Vec<String>> {
         let url = format!("{}/api/tags", self.ollama_url);
         let resp = self.client
@@ -148,10 +176,11 @@ impl AiClient {
             .ok_or_else(|| anyhow::anyhow!("No Ollama models available"))?;
             
         let url = format!("{}/api/generate", self.ollama_url);
-        let request = OllamaGenerateRequest {
+        let request = OllamaRequest {
             model,
             prompt: prompt.to_string(),
             stream: false,
+            options: None,
         };
         
         let resp = self.client
@@ -164,7 +193,7 @@ impl AiClient {
             anyhow::bail!("Ollama API returned error: {}", resp.status());
         }
         
-        let response: OllamaGenerateResponse = resp.json()
+        let response: OllamaResponse = resp.json()
             .context("Failed to parse Ollama response")?;
             
         Ok(response.response)
