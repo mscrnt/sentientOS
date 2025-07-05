@@ -117,7 +117,7 @@ pub fn log_serial(msg: &str) {
         _print(format_args!("{}", msg));
         _print(format_args!("\r\n"));
     }
-    
+
     #[cfg(not(feature = "serial-debug"))]
     let _ = msg;
 }
@@ -125,7 +125,7 @@ pub fn log_serial(msg: &str) {
 pub fn _print(args: fmt::Arguments) {
     #[cfg(feature = "serial-debug")]
     SERIAL1.lock().write_fmt(args).unwrap();
-    
+
     #[cfg(not(feature = "serial-debug"))]
     let _ = args;
 }

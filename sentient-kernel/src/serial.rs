@@ -71,7 +71,7 @@ pub fn init() {
 pub fn _print(args: fmt::Arguments) {
     #[cfg(feature = "serial-debug")]
     SERIAL1.lock().write_fmt(args).unwrap();
-    
+
     // When serial is disabled, just drop the output
     #[cfg(not(feature = "serial-debug"))]
     let _ = args;
@@ -110,7 +110,7 @@ pub fn try_read_char() -> Option<char> {
             None
         }
     }
-    
+
     #[cfg(not(feature = "serial-debug"))]
     None
 }
