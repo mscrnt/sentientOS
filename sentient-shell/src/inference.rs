@@ -1,5 +1,5 @@
 #[cfg(feature = "local-inference")]
-use anyhow::{Result, Context};
+use anyhow::{Context, Result};
 #[cfg(feature = "local-inference")]
 use tract_onnx::prelude::*;
 
@@ -14,7 +14,7 @@ impl LocalInference {
         // Try to load a model if available
         let model_path = std::env::var("SENTIENT_LOCAL_MODEL")
             .unwrap_or_else(|_| "models/tiny_llm.onnx".to_string());
-            
+
         let model = if std::path::Path::new(&model_path).exists() {
             log::info!("Loading local model from {}", model_path);
             match Self::load_model(&model_path) {
@@ -28,11 +28,13 @@ impl LocalInference {
             log::info!("No local model found at {}", model_path);
             None
         };
-        
+
         Ok(Self { model })
     }
-    
-    fn load_model(path: &str) -> Result<SimplePlan<TypedFact, Box<dyn TypedOp>, Graph<TypedFact, Box<dyn TypedOp>>>> {
+
+    fn load_model(
+        path: &str,
+    ) -> Result<SimplePlan<TypedFact, Box<dyn TypedOp>, Graph<TypedFact, Box<dyn TypedOp>>>> {
         let model = tract_onnx::onnx()
             .model_for_path(path)
             .context("Failed to load ONNX model")?
@@ -40,21 +42,21 @@ impl LocalInference {
             .context("Failed to optimize model")?
             .into_runnable()
             .context("Failed to make model runnable")?;
-            
+
         Ok(model)
     }
-    
+
     pub fn infer(&mut self, prompt: &str) -> Result<String> {
         if self.model.is_none() {
             anyhow::bail!("No local model loaded");
         }
-        
+
         // This is a simplified example - real inference would:
         // 1. Tokenize the prompt
         // 2. Convert to tensor
         // 3. Run inference
         // 4. Decode output tokens
-        
+
         // For demo purposes, return a fixed response
         Ok(format!(
             "Local inference response for '{}': This is a demo response from the local ONNX model. \
@@ -62,7 +64,7 @@ impl LocalInference {
             prompt
         ))
     }
-    
+
     #[allow(dead_code)]
     pub fn load_test_model() -> Result<()> {
         // Placeholder for loading models
@@ -80,7 +82,7 @@ impl LocalInference {
     pub fn new() -> Result<Self> {
         Ok(Self)
     }
-    
+
     pub fn infer(&mut self, _prompt: &str) -> Result<String> {
         anyhow::bail!("Local inference not enabled")
     }

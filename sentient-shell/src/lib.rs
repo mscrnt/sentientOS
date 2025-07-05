@@ -1,9 +1,9 @@
 pub mod ai;
 pub mod commands;
-#[cfg(feature = "serial")]
-pub mod serial;
 #[cfg(feature = "local-inference")]
 pub mod inference;
+#[cfg(feature = "serial")]
+pub mod serial;
 
 // Re-export ShellState from main module
 pub use crate::shell_state::ShellState;

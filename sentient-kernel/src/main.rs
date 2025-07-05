@@ -34,7 +34,7 @@ fn kernel_main(image_handle: Handle, system_table: SystemTable<Boot>) -> Status 
     serial::init();
     serial_println!("🧠 SentientOS Kernel v0.1.0 - AI-First Operating System");
     serial_println!("🚀 Kernel EFI started successfully");
-    
+
     // Initialize early allocator before parsing JSON
     mm::init_early_allocator(&system_table);
 
@@ -120,14 +120,14 @@ fn get_boot_info_address(system_table: &SystemTable<Boot>) -> Option<u64> {
     let chars_iter = load_options_cstr.iter();
     let mut addr = 0u64;
     let mut found = false;
-    
+
     // State machine for parsing "bootinfo=0x<hex>"
     let mut state = 0; // 0: searching, 1-11: matching "bootinfo=0x", 12+: parsing hex
     let pattern = "bootinfo=0x";
-    
+
     for ch in chars_iter {
         let c = u16::from(*ch) as u8; // Convert Char16 to u8
-        
+
         if state < pattern.len() {
             // Matching pattern
             if c == pattern.as_bytes()[state] {
@@ -158,7 +158,7 @@ fn get_boot_info_address(system_table: &SystemTable<Boot>) -> Option<u64> {
             }
         }
     }
-    
+
     if found && addr > 0 {
         serial_println!("📋 Found bootinfo address: 0x{:x}", addr);
         Some(addr)
@@ -202,7 +202,7 @@ fn kernel_runtime_loop(_runtime_table: SystemTable<Runtime>, _boot_info: &'stati
         if ai::should_enter_low_power() {
             x86_64::instructions::hlt();
         }
-        
+
         // Small delay to prevent CPU spinning
         for _ in 0..10000 {
             core::hint::spin_loop();

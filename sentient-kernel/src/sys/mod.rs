@@ -156,7 +156,7 @@ pub fn ai_system_tick() {
         }
         LAST_AI_TICK = current_time;
     }
-    
+
     // Submit periodic system analysis
     let metrics = get_system_metrics();
     let request = InferenceRequest::SystemAnalysis {

@@ -1,8 +1,8 @@
-use anyhow::Result;
 use crate::ai;
 use crate::commands;
 #[cfg(feature = "local-inference")]
 use crate::inference;
+use anyhow::Result;
 
 pub struct ShellState {
     pub ai_client: ai::AiClient,
@@ -15,27 +15,27 @@ impl ShellState {
         // Allow overriding URLs via environment variables for testing
         let ollama_url = std::env::var("OLLAMA_URL")
             .unwrap_or_else(|_| "http://192.168.69.197:11434".to_string());
-        let sd_url = std::env::var("SD_URL")
-            .unwrap_or_else(|_| "http://192.168.69.197:7860".to_string());
-            
+        let sd_url =
+            std::env::var("SD_URL").unwrap_or_else(|_| "http://192.168.69.197:7860".to_string());
+
         let ai_client = ai::AiClient::new(ollama_url, sd_url);
-        
+
         #[cfg(feature = "local-inference")]
         let local_inference = inference::LocalInference::new().ok();
-        
+
         Self {
             ai_client,
             #[cfg(feature = "local-inference")]
             local_inference,
         }
     }
-    
+
     pub fn execute_command(&mut self, input: &str) -> Result<bool> {
         let parts: Vec<&str> = input.split_whitespace().collect();
         if parts.is_empty() {
             return Ok(false);
         }
-        
+
         match parts[0] {
             "help" => {
                 commands::show_help();
@@ -69,7 +69,10 @@ impl ShellState {
             }
             "exit" => Ok(true),
             _ => {
-                println!("Unknown command: {}. Type 'help' for available commands.", parts[0]);
+                println!(
+                    "Unknown command: {}. Type 'help' for available commands.",
+                    parts[0]
+                );
                 Ok(false)
             }
         }

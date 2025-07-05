@@ -26,10 +26,10 @@ struct MemoryStats {
 /// Initialize a minimal allocator early for JSON parsing
 pub fn init_early_allocator(system_table: &SystemTable<Boot>) {
     serial_println!("🔧 Initializing early allocator...");
-    
+
     // Allocate a small region using UEFI for early allocations
     let boot_services = system_table.boot_services();
-    
+
     // Allocate 4MB for early heap
     const EARLY_HEAP_SIZE: usize = 4 * 1024 * 1024;
     let early_heap = boot_services
@@ -39,13 +39,13 @@ pub fn init_early_allocator(system_table: &SystemTable<Boot>) {
             EARLY_HEAP_SIZE / 4096,
         )
         .expect("Failed to allocate early heap");
-    
+
     unsafe {
         ALLOCATOR
             .lock()
             .init(early_heap as *mut u8, EARLY_HEAP_SIZE);
     }
-    
+
     serial_println!("✅ Early allocator initialized at 0x{:x}", early_heap);
 }
 
@@ -54,16 +54,19 @@ pub fn init(system_table: &SystemTable<Boot>, boot_info: &BootInfo) {
 
     // Get UEFI memory map
     let mmap_size = system_table.boot_services().memory_map_size();
-    
+
     // Use a static buffer for memory map to avoid allocation
     const MAX_MMAP_SIZE: usize = 16384; // 16KB should be enough for memory map
     static mut MMAP_BUFFER: [u8; MAX_MMAP_SIZE] = [0; MAX_MMAP_SIZE];
-    
+
     let required_size = mmap_size.map_size + 10 * mmap_size.entry_size;
     if required_size > MAX_MMAP_SIZE {
-        panic!("Memory map too large: {} > {}", required_size, MAX_MMAP_SIZE);
+        panic!(
+            "Memory map too large: {} > {}",
+            required_size, MAX_MMAP_SIZE
+        );
     }
-    
+
     let mmap_buf = unsafe { &mut MMAP_BUFFER[..required_size] };
 
     let mmap = system_table
