@@ -39,7 +39,7 @@ pub fn handle_input_simple(ch: char) {
                 if ch.is_ascii() && !ch.is_control() && COMMAND_LEN < 255 {
                     COMMAND_BUFFER[COMMAND_LEN] = ch as u8;
                     COMMAND_LEN += 1;
-                    crate::serial::_print(format_args!("{}", ch));
+                    crate::serial::_print(format_args!("{ch}"));
                 }
             }
         }
@@ -124,7 +124,7 @@ fn cmd_status() {
     // Check AI subsystem
     match crate::ai::try_get_ai_subsystem() {
         Ok(ai_lock) => {
-            if let Some(_) = *ai_lock.lock() {
+            if ai_lock.lock().is_some() {
                 serial_println!("  AI Subsystem: Active");
                 serial_println!("  Model: Embedded AI Model");
             } else {
@@ -189,7 +189,7 @@ fn cmd_models() {
 
     match crate::ai::try_get_ai_subsystem() {
         Ok(ai_lock) => {
-            if let Some(_) = *ai_lock.lock() {
+            if ai_lock.lock().is_some() {
                 serial_println!("  - Embedded GGUF Model");
                 serial_println!("    Format: GGUF v3");
                 serial_println!("    Type: Quantized Neural Network");
