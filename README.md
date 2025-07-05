@@ -97,27 +97,36 @@ cd sentient-shell
 cargo build --release
 ```
 
-### Testing with QEMU
+### Testing
 
-#### Create Boot Disk
-```bash
-cd sentient-bootloader
-mkfs.fat -F 32 -n SENTIENT -C boot.img 128
-mmd -i boot.img ::/EFI
-mmd -i boot.img ::/EFI/BOOT
-mcopy -i boot.img target/x86_64-unknown-uefi/debug/sentient-bootloader.efi ::/EFI/BOOT/BOOTX64.EFI
-mcopy -i boot.img ../sentient-kernel/target/x86_64-unknown-uefi/debug/sentient-kernel.efi ::/kernel.efi
-mcopy -i boot.img esp/startup.nsh ::/startup.nsh
-```
+#### Automated Testing (Recommended)
+The project uses GitHub Actions for continuous integration. Every push automatically:
+- Builds the bootloader and kernel
+- Creates a bootable disk image
+- Tests the full boot chain in QEMU
+- Runs code quality checks
 
-#### Run in QEMU
+View the latest test results: [![QEMU Boot Test](https://github.com/mscrnt/sentientOS/actions/workflows/qemu-test.yml/badge.svg)](https://github.com/mscrnt/sentientOS/actions/workflows/qemu-test.yml)
+
+#### Local Testing with QEMU
+For local development, you can test the boot process:
+
 ```bash
+# Build everything
+cd sentient-bootloader && cargo build --target x86_64-unknown-uefi
+cd ../sentient-kernel && cargo build --target x86_64-unknown-uefi
+cd ../sentient-shell && cargo build --release
+
+# Create boot disk (requires mtools)
+cd ../sentient-bootloader
+./scripts/create-boot-disk.sh
+
+# Run in QEMU (requires OVMF firmware)
 qemu-system-x86_64 \
   -m 4096 \
-  -bios OVMF.fd \
+  -bios /usr/share/ovmf/OVMF.fd \
   -drive format=raw,file=boot.img \
-  -serial mon:stdio \
-  -display none
+  -nographic
 ```
 
 ## Boot Process
