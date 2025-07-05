@@ -114,8 +114,8 @@ pub fn init_serial() {
 pub fn log_serial(msg: &str) {
     #[cfg(feature = "serial-debug")]
     {
-        serial_print!("{}", msg);
-        serial_print!("\r\n");
+        _print(format_args!("{}", msg));
+        _print(format_args!("\r\n"));
     }
     
     #[cfg(not(feature = "serial-debug"))]
