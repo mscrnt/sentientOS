@@ -14,6 +14,7 @@ pub fn show_help() {
     println!("  ai         - AI router commands");
     println!("  rag        - Retrieval-augmented generation");
     println!("  tool       - Tool execution framework");
+    println!("  llm        - LLM routing and model management");
     println!("  exit       - Exit the shell");
     println!();
     println!("Package Commands:");

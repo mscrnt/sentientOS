@@ -135,6 +135,13 @@ impl ShellState {
                 crate::shell::tools::handle_tool_command(&parts[1..])?;
                 Ok(false)
             }
+            "llm" => {
+                match crate::ai_router::llm_cli::handle_llm_command(&parts[1..]) {
+                    Ok(result) => println!("{}", result),
+                    Err(e) => eprintln!("Error: {}", e),
+                }
+                Ok(false)
+            }
             "exit" => Ok(true),
             _ => {
                 // Check if it's an installed package command

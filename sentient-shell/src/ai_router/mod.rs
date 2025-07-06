@@ -6,6 +6,10 @@ pub mod router;
 pub mod providers;
 pub mod cli;
 pub mod stream_parser;
+pub mod intent;
+pub mod config;
+pub mod enhanced_router;
+pub mod llm_cli;
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
