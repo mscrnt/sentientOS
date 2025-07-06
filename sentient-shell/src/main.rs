@@ -1,7 +1,7 @@
 use anyhow::Result;
 use std::io::{self, Write};
 
-use sentient_shell::{ShellState, BANNER, SHELL_VERSION};
+use sentient_shell::{ShellState, BANNER};
 
 fn main() -> Result<()> {
     env_logger::init();
@@ -28,6 +28,11 @@ fn main() -> Result<()> {
 fn run_terminal_shell() -> Result<()> {
     println!("{}", BANNER);
     println!("Type 'help' for available commands.\n");
+
+    // Initialize service manager
+    if let Err(e) = sentient_shell::service::manager::get_service_manager().init() {
+        log::warn!("Failed to initialize service manager: {}", e);
+    }
 
     let mut shell = ShellState::new();
 

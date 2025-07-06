@@ -2,6 +2,7 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
+#[derive(Clone)]
 pub struct AiClient {
     ollama_url: String,
     sd_url: String,
@@ -58,6 +59,7 @@ struct SDTxt2ImgResponse {
 #[derive(Deserialize)]
 struct SDModel {
     title: String,
+    #[allow(dead_code)]
     model_name: String,
 }
 
