@@ -105,6 +105,17 @@ impl CommandValidator {
         let cmd = parts[0];
         let args = &parts[1..];
         
+        // Special handling for RAG queries
+        if cmd == "rag" && matches!(prefix, CommandPrefix::Validated) {
+            // RAG queries are always safe in validated mode
+            return Ok(ValidatedCommand {
+                prefix: prefix.clone(),
+                command: cmd.to_string(),
+                args: args.iter().map(|s| s.to_string()).collect(),
+                requires_confirmation: false,
+            });
+        }
+        
         // Check if command has a schema
         if let Some(schema) = self.schemas.get(cmd) {
             // Apply prefix rules

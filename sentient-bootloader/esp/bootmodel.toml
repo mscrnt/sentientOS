@@ -1,0 +1,29 @@
+# Boot-level AI Model Configuration
+
+[bootmodel]
+id = "phi"
+path = "/phi.Q8_0.gguf"
+context_length = 2048
+runtime = "Hybrid"
+preload = true
+safe_mode = true
+
+[bootmodel.limits]
+max_memory_mb = 512
+allow_disk_swap = false
+max_inference_time_ms = 5000
+
+[bootmodel.features]
+schema_validation = true
+command_safety = true
+offline_capable = true
+streaming = true
+
+[bootmodel.fallback]
+# If phi fails, use minimal rule-based responses
+enabled = true
+responses = [
+    { pattern = "help", response = "Boot model active. Commands: status, safe-mode, recovery" },
+    { pattern = "status", response = "System booting. Model: phi-2 (offline mode)" },
+    { pattern = "recovery", response = "Entering recovery mode..." }
+]
