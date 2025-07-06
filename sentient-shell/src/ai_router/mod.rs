@@ -10,6 +10,7 @@ pub mod intent;
 pub mod config;
 pub mod enhanced_router;
 pub mod llm_cli;
+pub mod llm_cli_extra;
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};

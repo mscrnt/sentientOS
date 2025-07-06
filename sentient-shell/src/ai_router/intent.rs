@@ -19,129 +19,158 @@ pub enum Intent {
     Conversation,
 }
 
+/// Intent detection result with confidence
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IntentResult {
+    pub intent: Intent,
+    pub confidence: f32,
+    pub signals: Vec<String>,
+}
+
 /// Intent detector
 pub struct IntentDetector;
 
 impl IntentDetector {
-    /// Detect intent from prompt
-    pub fn detect(prompt: &str) -> Intent {
+    /// Detect intent with confidence scoring
+    pub fn detect_with_confidence(prompt: &str) -> IntentResult {
         let prompt_lower = prompt.to_lowercase();
         let word_count = prompt_lower.split_whitespace().count();
+        let mut scores: Vec<(Intent, f32, Vec<String>)> = Vec::new();
         
         // Tool calling patterns
-        if prompt_lower.contains("!@") || 
-           prompt_lower.contains("!$") ||
-           prompt_lower.contains("!#") ||
-           prompt_lower.contains("!&") ||
-           prompt_lower.contains("!~") ||
-           (prompt_lower.contains("call") && prompt_lower.contains("tool")) ||
-           prompt_lower.contains("execute") && (prompt_lower.contains("command") || prompt_lower.contains("tool")) ||
-           prompt_lower.contains("run") && (prompt_lower.contains("command") || prompt_lower.contains("tool")) {
-            debug!("Intent: ToolCall - detected tool execution patterns");
-            return Intent::ToolCall;
+        let mut tool_score = 0.0;
+        let mut tool_signals = Vec::new();
+        
+        if prompt_lower.contains("!@") || prompt_lower.contains("!$") || 
+           prompt_lower.contains("!#") || prompt_lower.contains("!&") || 
+           prompt_lower.contains("!~") {
+            tool_score += 1.0;
+            tool_signals.push("Command prefix detected".to_string());
         }
         
-        // Command execution patterns
-        if prompt_lower.starts_with("sudo") ||
-           prompt_lower.starts_with("ls") ||
-           prompt_lower.starts_with("cd") ||
-           prompt_lower.starts_with("pwd") ||
-           prompt_lower.starts_with("mkdir") ||
-           prompt_lower.contains("shell command") ||
-           prompt_lower.contains("terminal command") {
-            debug!("Intent: CommandExecution - detected command patterns");
-            return Intent::CommandExecution;
+        if (prompt_lower.contains("call") || prompt_lower.contains("execute") || 
+            prompt_lower.contains("run")) && 
+           (prompt_lower.contains("tool") || prompt_lower.contains("command")) {
+            tool_score += 0.8;
+            tool_signals.push("Tool execution keywords".to_string());
+        }
+        
+        if tool_score > 0.0 {
+            scores.push((Intent::ToolCall, tool_score.min(1.0), tool_signals));
         }
         
         // Code generation patterns
-        if (prompt_lower.contains("write") || prompt_lower.contains("create") || prompt_lower.contains("implement")) && 
-           (prompt_lower.contains("code") || 
-            prompt_lower.contains("function") ||
-            prompt_lower.contains("class") ||
-            prompt_lower.contains("program") ||
-            prompt_lower.contains("script") ||
-            prompt_lower.contains("module")) ||
-           prompt_lower.contains("implement") && prompt_lower.contains("in rust") ||
-           prompt_lower.contains("generate") && prompt_lower.contains("code") {
-            debug!("Intent: CodeGeneration - detected code writing patterns");
-            return Intent::CodeGeneration;
+        let mut code_score = 0.0;
+        let mut code_signals = Vec::new();
+        
+        if (prompt_lower.contains("write") || prompt_lower.contains("create") || 
+            prompt_lower.contains("implement") || prompt_lower.contains("generate")) {
+            if prompt_lower.contains("code") || prompt_lower.contains("function") ||
+               prompt_lower.contains("class") || prompt_lower.contains("program") ||
+               prompt_lower.contains("script") || prompt_lower.contains("module") {
+                code_score += 0.9;
+                code_signals.push("Code generation keywords".to_string());
+            }
+        }
+        
+        if prompt_lower.contains("in rust") || prompt_lower.contains("in python") ||
+           prompt_lower.contains("in javascript") {
+            code_score += 0.3;
+            code_signals.push("Programming language specified".to_string());
+        }
+        
+        if code_score > 0.0 {
+            scores.push((Intent::CodeGeneration, code_score.min(1.0), code_signals));
         }
         
         // System analysis patterns
-        if prompt_lower.contains("analyze") && (prompt_lower.contains("system") || prompt_lower.contains("log")) ||
-           prompt_lower.contains("diagnose") ||
-           prompt_lower.contains("debug") ||
-           prompt_lower.contains("troubleshoot") ||
-           (prompt_lower.contains("system") || prompt_lower.contains("service")) && 
-           (prompt_lower.contains("health") ||
-            prompt_lower.contains("status") ||
-            prompt_lower.contains("performance") ||
-            prompt_lower.contains("problem")) ||
-           prompt_lower.contains("check") && (prompt_lower.contains("memory") || prompt_lower.contains("disk") || prompt_lower.contains("cpu")) {
-            debug!("Intent: SystemAnalysis - detected system diagnostic patterns");
-            return Intent::SystemAnalysis;
+        let mut sys_score = 0.0;
+        let mut sys_signals = Vec::new();
+        
+        if prompt_lower.contains("analyze") || prompt_lower.contains("diagnose") ||
+           prompt_lower.contains("debug") || prompt_lower.contains("troubleshoot") {
+            sys_score += 0.7;
+            sys_signals.push("Analysis keywords".to_string());
+        }
+        
+        if (prompt_lower.contains("system") || prompt_lower.contains("service")) && 
+           (prompt_lower.contains("health") || prompt_lower.contains("status") ||
+            prompt_lower.contains("performance") || prompt_lower.contains("problem")) {
+            sys_score += 0.5;
+            sys_signals.push("System monitoring context".to_string());
+        }
+        
+        if sys_score > 0.0 {
+            scores.push((Intent::SystemAnalysis, sys_score.min(1.0), sys_signals));
         }
         
         // Visual analysis patterns
-        if prompt_lower.contains("screenshot") ||
-           prompt_lower.contains("image") ||
-           prompt_lower.contains("picture") ||
-           prompt_lower.contains("visual") ||
-           prompt_lower.contains("see") && prompt_lower.contains("screen") ||
-           prompt_lower.contains("look at") && prompt_lower.contains("display") ||
-           prompt_lower.contains("ui") && (prompt_lower.contains("debug") || prompt_lower.contains("analyze")) {
-            debug!("Intent: VisualAnalysis - detected visual analysis patterns");
-            return Intent::VisualAnalysis;
+        let mut visual_score = 0.0;
+        let mut visual_signals = Vec::new();
+        
+        if prompt_lower.contains("screenshot") || prompt_lower.contains("image") ||
+           prompt_lower.contains("picture") || prompt_lower.contains("visual") {
+            visual_score += 0.9;
+            visual_signals.push("Visual content keywords".to_string());
         }
         
-        // Documentation patterns
-        if prompt_lower.contains("document") ||
-           prompt_lower.contains("explain how") ||
-           prompt_lower.contains("tutorial") ||
-           prompt_lower.contains("guide") ||
-           prompt_lower.contains("readme") ||
-           prompt_lower.contains("write docs") {
-            debug!("Intent: Documentation - detected documentation patterns");
-            return Intent::Documentation;
+        if visual_score > 0.0 {
+            scores.push((Intent::VisualAnalysis, visual_score.min(1.0), visual_signals));
         }
         
         // Complex reasoning patterns
-        if prompt_lower.contains("explain") && (prompt_lower.contains("why") || prompt_lower.contains("how")) ||
-           prompt_lower.contains("compare") && prompt_lower.contains("between") ||
-           prompt_lower.contains("analyze") && prompt_lower.contains("implications") ||
-           prompt_lower.contains("pros and cons") ||
-           prompt_lower.contains("trade-off") ||
-           prompt_lower.contains("deep dive") ||
-           word_count > 50 {  // Long prompts often need reasoning
-            debug!("Intent: ComplexReasoning - detected complex analysis patterns");
-            return Intent::ComplexReasoning;
+        let mut complex_score = 0.0;
+        let mut complex_signals = Vec::new();
+        
+        if prompt_lower.contains("explain") && (prompt_lower.contains("why") || 
+                                                prompt_lower.contains("how")) {
+            complex_score += 0.7;
+            complex_signals.push("Explanation request".to_string());
+        }
+        
+        if prompt_lower.contains("compare") || prompt_lower.contains("analyze") && 
+           prompt_lower.contains("implications") || prompt_lower.contains("trade-off") {
+            complex_score += 0.6;
+            complex_signals.push("Complex analysis keywords".to_string());
+        }
+        
+        if word_count > 50 {
+            complex_score += 0.3;
+            complex_signals.push("Long prompt".to_string());
+        }
+        
+        if complex_score > 0.0 {
+            scores.push((Intent::ComplexReasoning, complex_score.min(1.0), complex_signals));
         }
         
         // Quick response patterns
-        if word_count < 10 &&
-           !prompt_lower.contains("?") &&
-           !prompt_lower.contains("explain") &&
-           !prompt_lower.contains("how") &&
-           !prompt_lower.contains("why") {
-            debug!("Intent: QuickResponse - detected short, simple query");
-            return Intent::QuickResponse;
+        if word_count < 10 && !prompt_lower.contains("?") {
+            scores.push((Intent::QuickResponse, 0.8, vec!["Short query".to_string()]));
         }
         
-        // Conversation patterns
-        if prompt_lower.contains("chat") ||
-           prompt_lower.contains("talk") ||
-           prompt_lower.contains("hello") ||
-           prompt_lower.contains("hi ") ||
-           prompt_lower.starts_with("hi") ||
-           prompt_lower.contains("thanks") ||
-           prompt_lower.contains("thank you") {
-            debug!("Intent: Conversation - detected conversational patterns");
-            return Intent::Conversation;
-        }
+        // Sort by confidence and pick the highest
+        scores.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
         
-        // Default to general query
-        debug!("Intent: GeneralQuery - no specific patterns detected");
-        Intent::GeneralQuery
+        if let Some((intent, confidence, signals)) = scores.first() {
+            debug!("Intent: {:?}, Confidence: {:.2}, Signals: {:?}", intent, confidence, signals);
+            IntentResult {
+                intent: intent.clone(),
+                confidence: *confidence,
+                signals: signals.clone(),
+            }
+        } else {
+            // Default to general query with low confidence
+            IntentResult {
+                intent: Intent::GeneralQuery,
+                confidence: 0.3,
+                signals: vec!["No specific patterns detected".to_string()],
+            }
+        }
+    }
+    
+    /// Detect intent from prompt (legacy method)
+    pub fn detect(prompt: &str) -> Intent {
+        Self::detect_with_confidence(prompt).intent
     }
     
     /// Map intent to model capability

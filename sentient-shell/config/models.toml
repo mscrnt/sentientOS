@@ -5,6 +5,9 @@
 name = "Microsoft Phi-2"
 provider = "local"
 location = "boot"
+trusted = true
+allow_tool_calls = true
+offline_only = false
 capabilities = [
     "tool_calling",
     "basic_reasoning",
@@ -20,12 +23,16 @@ use_cases = [
     "quick_responses",
     "offline_operation"
 ]
+safety_notes = "Boot-level model, fully trusted for system operations"
 
 [models.llama3_local]
 name = "Llama 3 8B"
 provider = "ollama"
 endpoint = "http://localhost:11434"
 model_id = "llama3:8b"
+trusted = true
+allow_tool_calls = true
+offline_only = false
 capabilities = [
     "general_reasoning",
     "code_generation",
@@ -41,12 +48,16 @@ use_cases = [
     "documentation",
     "moderate_complexity"
 ]
+safety_notes = "Local Ollama instance, trusted for general operations"
 
 [models.deepseek_v2]
 name = "DeepSeek V2 Coder"
 provider = "ollama"
 endpoint = "http://192.168.69.197:11434"
 model_id = "deepseek-coder-v2"
+trusted = false
+allow_tool_calls = false
+offline_only = false
 capabilities = [
     "advanced_reasoning",
     "code_generation",
@@ -63,12 +74,16 @@ use_cases = [
     "system_design",
     "multi_step_planning"
 ]
+safety_notes = "Remote model, not trusted for direct tool execution"
 
 [models.mistral_instruct]
 name = "Mistral 7B Instruct"
 provider = "ollama"
 endpoint = "http://192.168.69.197:11434"
 model_id = "mistral:7b-instruct"
+trusted = true
+allow_tool_calls = true
+offline_only = false
 capabilities = [
     "instruction_following",
     "tool_calling",
@@ -83,12 +98,16 @@ use_cases = [
     "tool_orchestration",
     "quick_analysis"
 ]
+safety_notes = "Instruction-tuned model, trusted for tool execution"
 
 [models.llama3_vision]
 name = "Llama 3.2 Vision"
 provider = "ollama"
 endpoint = "http://192.168.69.197:11434"
 model_id = "llama3.2-vision"
+trusted = false
+allow_tool_calls = false
+offline_only = false
 capabilities = [
     "vision_understanding",
     "screenshot_analysis",
@@ -103,6 +122,7 @@ use_cases = [
     "visual_debugging",
     "ui_automation"
 ]
+safety_notes = "Vision model, limited to analysis tasks only"
 
 # Routing rules define how to select models based on intent
 [routing]

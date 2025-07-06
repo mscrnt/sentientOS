@@ -32,7 +32,20 @@ fn handle_route_command(args: &[&str]) -> Result<String> {
             if args.len() < 2 {
                 return Ok("Usage: llm route test <prompt>".to_string());
             }
-            test_routing(&args[1..].join(" "))
+            let verbose = args.contains(&"--verbose");
+            let prompt = args.iter()
+                .filter(|a| !a.starts_with("--"))
+                .skip(1)
+                .cloned()
+                .collect::<Vec<_>>()
+                .join(" ");
+            test_routing(&prompt, verbose)
+        },
+        "explain" => {
+            if args.len() < 2 {
+                return Ok("Usage: llm route explain <prompt>".to_string());
+            }
+            super::llm_cli_extra::explain_routing(&args[1..].join(" "))
         },
         "info" => show_routing_info(),
         _ => Ok(format!("Unknown route command: {}. Try 'llm route help'", args[0])),
@@ -48,6 +61,19 @@ fn handle_model_command(args: &[&str]) -> Result<String> {
     match args[0] {
         "info" => show_model_info(&args[1..]),
         "list" => list_all_models(),
+        "show-trusted" => super::llm_cli_extra::show_trusted_models(),
+        "trust" => {
+            if args.len() < 2 {
+                return Ok("Usage: llm model trust <model_id>".to_string());
+            }
+            super::llm_cli_extra::toggle_model_trust(args[1], true)
+        },
+        "untrust" => {
+            if args.len() < 2 {
+                return Ok("Usage: llm model untrust <model_id>".to_string());
+            }
+            super::llm_cli_extra::toggle_model_trust(args[1], false)
+        },
         "capabilities" => list_model_capabilities(&args[1..]),
         _ => Ok(format!("Unknown model command: {}. Try 'llm model help'", args[0])),
     }
@@ -124,8 +150,8 @@ fn list_routing_rules() -> Result<String> {
 }
 
 /// Test routing for a prompt
-fn test_routing(prompt: &str) -> Result<String> {
-    let router = EnhancedAIRouter::new();
+fn test_routing(prompt: &str, verbose: bool) -> Result<String> {
+    let router = EnhancedAIRouter::new().with_verbose(verbose);
     let results = router.test_routing(prompt);
     
     let mut output = String::new();
@@ -134,6 +160,14 @@ fn test_routing(prompt: &str) -> Result<String> {
     
     if let Some(intent) = results.get("intent") {
         output.push_str(&format!("Detected Intent: {}\n", intent));
+    }
+    
+    if let Some(confidence) = results.get("confidence") {
+        output.push_str(&format!("Confidence: {}\n", confidence));
+    }
+    
+    if let Some(signals) = results.get("signals") {
+        output.push_str(&format!("Detection Signals: {}\n", signals));
     }
     
     if let Some(models) = results.get("recommended_models") {

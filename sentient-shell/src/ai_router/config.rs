@@ -28,11 +28,15 @@ pub struct ModelConfig {
     pub endpoint: Option<String>,
     pub location: Option<String>,
     pub model_id: Option<String>,
+    pub trusted: bool,
+    pub allow_tool_calls: bool,
+    pub offline_only: Option<bool>,
     pub capabilities: Vec<String>,
     pub performance_tier: PerformanceTier,
     pub context_length: usize,
     pub priority: u32,
     pub use_cases: Vec<String>,
+    pub safety_notes: Option<String>,
 }
 
 /// Routing configuration
