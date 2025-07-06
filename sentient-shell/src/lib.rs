@@ -10,11 +10,22 @@ pub mod serial;
 pub mod service;
 pub mod validated_exec;
 pub mod schema;
+pub mod boot_llm;
+pub mod rag;
 
 // Re-export ShellState from main module
 pub use crate::shell_state::ShellState;
 
 pub mod shell_state;
+
+// Tool use framework
+pub mod tools;
+
+// LLM function parsing
+pub mod llm;
+
+// Shell integration
+pub mod shell;
 
 pub const SHELL_VERSION: &str = "1.0.0";
 pub const BANNER: &str = r#"

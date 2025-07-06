@@ -12,6 +12,8 @@ pub fn show_help() {
     println!("  pkg        - Package management commands");
     println!("  service    - Service management commands");
     println!("  ai         - AI router commands");
+    println!("  rag        - Retrieval-augmented generation");
+    println!("  tool       - Tool execution framework");
     println!("  exit       - Exit the shell");
     println!();
     println!("Package Commands:");
@@ -66,6 +68,11 @@ pub fn ask_ai(ai_client: &mut AiClient, prompt: &str) -> Result<()> {
         Ok(response) => {
             println!("\nResponse:");
             println!("{}", response);
+            
+            // Process response for tool calls
+            if let Err(e) = crate::shell::tools::process_ai_response_for_tools(&response) {
+                log::warn!("Failed to process tool calls: {}", e);
+            }
         }
         Err(e) => {
             println!("Failed to get AI response: {}", e);

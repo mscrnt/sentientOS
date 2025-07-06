@@ -71,7 +71,16 @@ impl ShellState {
                     return Ok(false);
                 }
                 let prompt = parts[1..].join(" ");
-                commands::ask_ai(&mut self.ai_client, &prompt)?;
+                
+                // Check if we should use boot LLM
+                if crate::boot_llm::should_use_boot_llm() {
+                    match crate::boot_llm::get_boot_llm_response(&prompt) {
+                        Ok(response) => println!("{}", response),
+                        Err(e) => eprintln!("Boot LLM error: {}", e),
+                    }
+                } else {
+                    commands::ask_ai(&mut self.ai_client, &prompt)?;
+                }
                 Ok(false)
             }
             "models" => {
@@ -111,6 +120,19 @@ impl ShellState {
                 }
                 let result = crate::ai_router::cli::handle_command(&parts[1..])?;
                 println!("{}", result);
+                Ok(false)
+            }
+            "rag" => {
+                if parts.len() < 2 {
+                    println!("{}", crate::rag::cli::handle_rag_command(&[])?);
+                    return Ok(false);
+                }
+                let result = crate::rag::cli::handle_rag_command(&parts[1..])?;
+                println!("{}", result);
+                Ok(false)
+            }
+            "tool" => {
+                crate::shell::tools::handle_tool_command(&parts[1..])?;
                 Ok(false)
             }
             "exit" => Ok(true),
