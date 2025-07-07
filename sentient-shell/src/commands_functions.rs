@@ -15,6 +15,10 @@ pub fn show_help() {
     println!("  rag        - Retrieval-augmented generation");
     println!("  tool       - Tool execution framework");
     println!("  llm        - LLM routing and model management");
+    println!("  rag_tool   - Hybrid RAG + Tool fusion with intelligent routing");
+    println!("  rl         - Reinforcement learning trace analysis");
+    println!("  rl infer   - Test RL policy inference on a prompt");
+    println!("  sentient goal - Execute autonomous goal-driven tasks");
     println!("  exit       - Exit the shell");
     println!();
     println!("Package Commands:");

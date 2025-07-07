@@ -105,10 +105,13 @@ impl AiClient {
         let models = self.list_ollama_models()?;
 
         // Prefer deepseek models if available
-        if let Some(model) = models.iter().find(|m| m.starts_with("deepseek-v2")) {
+        if let Some(model) = models.iter().find(|m| m.contains("deepseek-v2")) {
             return Ok(Some(model.clone()));
         }
-        if let Some(model) = models.iter().find(|m| m.starts_with("deepseek-r1")) {
+        if let Some(model) = models.iter().find(|m| m.contains("deepseek-r1")) {
+            return Ok(Some(model.clone()));
+        }
+        if let Some(model) = models.iter().find(|m| m.contains("deepseek")) {
             return Ok(Some(model.clone()));
         }
 

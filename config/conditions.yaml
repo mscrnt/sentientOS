@@ -1,0 +1,87 @@
+conditions:
+  - name: high_memory_usage
+    description: Trigger cache cleanup when memory usage is critical
+    pattern:
+      type: Numeric
+      field: memory_percent
+      operator: ">"
+      value: 90.0
+    tool: clean_cache
+    args:
+      aggressive: true
+    confirm: true
+    priority: 10
+
+  - name: low_disk_space
+    description: Check disk details when space is mentioned
+    pattern:
+      type: Combined
+      operator: "or"
+      conditions:
+        - type: Contains
+          keywords: ["disk space", "storage", "disk full"]
+        - type: Numeric
+          field: disk_percent
+          operator: ">"
+          value: 85.0
+    tool: disk_info
+    args:
+      verbose: true
+    confirm: false
+    priority: 8
+
+  - name: process_issue
+    description: List processes when CPU or process issues detected
+    pattern:
+      type: Combined
+      operator: "or"
+      conditions:
+        - type: Contains
+          keywords: ["process", "cpu high", "slow performance"]
+        - type: Numeric
+          field: cpu_percent
+          operator: ">"
+          value: 80.0
+    tool: process_list
+    args:
+      sort_by: cpu
+      limit: 10
+    confirm: false
+    priority: 7
+
+  - name: network_check
+    description: Check network status on connectivity issues
+    pattern:
+      type: Contains
+      keywords: ["network", "connection", "internet", "offline"]
+    tool: network_status
+    args: {}
+    confirm: false
+    priority: 5
+
+  - name: service_restart
+    description: Restart service when explicitly mentioned
+    pattern:
+      type: Regex
+      pattern: "restart\\s+(\\w+)\\s+service"
+    tool: service_manager
+    args:
+      action: restart
+    confirm: true
+    priority: 9
+
+  - name: hivefix_trigger
+    description: Run HiveFix when system issues are severe
+    pattern:
+      type: Combined
+      operator: "and"
+      conditions:
+        - type: Contains
+          keywords: ["system error", "critical", "broken", "corrupted"]
+        - type: Contains
+          keywords: ["fix", "repair", "resolve"]
+    tool: hivefix
+    args:
+      mode: auto
+    confirm: true
+    priority: 10

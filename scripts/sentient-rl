@@ -1,0 +1,180 @@
+#!/usr/bin/env python3
+"""
+CLI for managing SentientOS Continuous Learning
+"""
+
+import argparse
+import json
+import sys
+import subprocess
+from pathlib import Path
+from datetime import datetime, timedelta
+
+
+def status():
+    """Show current learning system status"""
+    logs_dir = Path("logs")
+    policies_dir = Path("policies")
+    
+    print("🚀 SentientOS Continuous Learning Status")
+    print("=" * 50)
+    
+    # Check if orchestrator is running
+    try:
+        result = subprocess.run(["pgrep", "-f", "orchestrator.py"], capture_output=True)
+        if result.returncode == 0:
+            print("✅ Orchestrator: RUNNING (PID: {})".format(result.stdout.decode().strip()))
+        else:
+            print("❌ Orchestrator: NOT RUNNING")
+    except:
+        print("⚠️  Orchestrator: UNKNOWN")
+    
+    # Current policy version
+    policy_files = list(policies_dir.glob("rl_policy_v*.pkl"))
+    if policy_files:
+        versions = []
+        for f in policy_files:
+            try:
+                version = int(f.stem.split('_v')[1])
+                versions.append(version)
+            except:
+                continue
+        current_version = max(versions) if versions else 0
+        print(f"📦 Current Policy: v{current_version}")
+    else:
+        print("📦 Current Policy: None")
+    
+    # Recent metrics
+    trace_files = sorted(logs_dir.glob("*.jsonl"), key=lambda x: x.stat().st_mtime, reverse=True)
+    if trace_files:
+        recent_traces = []
+        for trace_file in trace_files[:3]:
+            with open(trace_file, 'r') as f:
+                for line in f:
+                    try:
+                        trace = json.loads(line.strip())
+                        if 'reward' in trace:
+                            recent_traces.append(trace)
+                    except:
+                        continue
+        
+        if recent_traces:
+            recent_traces = recent_traces[-50:]
+            avg_reward = sum(t.get('reward', 0) for t in recent_traces) / len(recent_traces)
+            print(f"📊 Recent Avg Reward: {avg_reward:.2f} (last {len(recent_traces)} traces)")
+    
+    # Recent events
+    event_file = logs_dir / f"continuous_learning_{datetime.now():%Y%m%d}.jsonl"
+    if event_file.exists():
+        events = []
+        with open(event_file, 'r') as f:
+            for line in f:
+                try:
+                    events.append(json.loads(line.strip()))
+                except:
+                    continue
+        
+        if events:
+            print(f"\n📅 Recent Events (last 5):")
+            for event in events[-5:]:
+                timestamp = datetime.fromisoformat(event['timestamp'])
+                print(f"  [{timestamp:%H:%M:%S}] {event.get('event', 'Unknown')}")
+
+
+def start():
+    """Start the continuous learning system"""
+    print("Starting SentientOS Continuous Learning...")
+    
+    # Check if already running
+    result = subprocess.run(["pgrep", "-f", "orchestrator.py"], capture_output=True)
+    if result.returncode == 0:
+        print("❌ Orchestrator already running")
+        return 1
+    
+    # Start orchestrator in background
+    subprocess.Popen(
+        ["python3", "rl_agent/orchestrator.py"],
+        stdout=open("logs/orchestrator.log", "a"),
+        stderr=subprocess.STDOUT,
+        start_new_session=True
+    )
+    
+    print("✅ Orchestrator started")
+    return 0
+
+
+def stop():
+    """Stop the continuous learning system"""
+    print("Stopping SentientOS Continuous Learning...")
+    
+    result = subprocess.run(["pkill", "-f", "orchestrator.py"], capture_output=True)
+    if result.returncode == 0:
+        print("✅ Orchestrator stopped")
+    else:
+        print("❌ Orchestrator not running")
+    
+    return result.returncode
+
+
+def dashboard():
+    """Launch the monitoring dashboard"""
+    print("Launching dashboard...")
+    subprocess.run(["python3", "rl_agent/dashboard.py"])
+
+
+def trigger_retrain():
+    """Manually trigger retraining"""
+    print("Triggering manual retraining...")
+    
+    trigger_event = {
+        "event": "RETRAIN_TRIGGER",
+        "timestamp": datetime.now().isoformat(),
+        "degradation_events": ["manual_trigger"],
+        "reason": "Manual trigger via CLI"
+    }
+    
+    trigger_file = Path("logs") / f"retrain_triggers_{datetime.now():%Y%m%d}.jsonl"
+    with open(trigger_file, 'a') as f:
+        f.write(json.dumps(trigger_event) + '\n')
+    
+    print("✅ Retrain trigger created")
+
+
+def main():
+    parser = argparse.ArgumentParser(description='SentientOS Continuous Learning CLI')
+    subparsers = parser.add_subparsers(dest='command', help='Commands')
+    
+    # Status command
+    subparsers.add_parser('status', help='Show current status')
+    
+    # Start command
+    subparsers.add_parser('start', help='Start continuous learning')
+    
+    # Stop command
+    subparsers.add_parser('stop', help='Stop continuous learning')
+    
+    # Dashboard command
+    subparsers.add_parser('dashboard', help='Launch monitoring dashboard')
+    
+    # Trigger command
+    subparsers.add_parser('trigger-retrain', help='Manually trigger retraining')
+    
+    args = parser.parse_args()
+    
+    if not args.command:
+        parser.print_help()
+        return 1
+    
+    commands = {
+        'status': status,
+        'start': start,
+        'stop': stop,
+        'dashboard': dashboard,
+        'trigger-retrain': trigger_retrain
+    }
+    
+    return commands[args.command]()
+
+
+if __name__ == "__main__":
+    sys.exit(main())

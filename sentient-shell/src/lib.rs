@@ -1,6 +1,13 @@
 pub mod ai;
 pub mod ai_router;
-pub mod commands;
+pub mod commands_functions;
+pub mod commands {
+    pub mod rag_tool;
+    pub mod rl_trace;
+    pub mod rl_infer;
+    pub mod rl_retrain;
+    pub mod sentient_goal;
+}
 pub mod hivefix;
 #[cfg(feature = "local-inference")]
 pub mod inference;
@@ -26,6 +33,16 @@ pub mod llm;
 
 // Shell integration
 pub mod shell;
+
+// RAG-Tool fusion framework
+pub mod rag_tool_fusion;
+
+// Python bindings for RL
+pub mod bindings;
+
+// Test modules
+#[cfg(test)]
+pub mod tests;
 
 pub const SHELL_VERSION: &str = "1.0.0";
 pub const BANNER: &str = r#"

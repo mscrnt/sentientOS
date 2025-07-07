@@ -1,0 +1,96 @@
+# Tool Registry for SentientOS
+# Defines available tools and their capabilities
+
+[metadata]
+version = "1.0.0"
+description = "SentientOS Tool Registry"
+
+[[tools]]
+name = "memory_check"
+description = "Check system memory usage"
+category = "system"
+command = "free -m"
+requires_sudo = false
+output_format = "json"
+capabilities = ["monitoring", "diagnostics"]
+
+[[tools]]
+name = "disk_info"
+description = "Check disk usage and available space"
+category = "system"
+command = "df -h"
+requires_sudo = false
+output_format = "text"
+capabilities = ["monitoring", "storage"]
+
+[[tools]]
+name = "process_list"
+description = "List running processes"
+category = "system"
+command = "ps aux"
+requires_sudo = false
+output_format = "text"
+capabilities = ["monitoring", "process"]
+
+[[tools]]
+name = "log_viewer"
+description = "View system logs"
+category = "logging"
+command = "tail -n 100"
+requires_sudo = false
+output_format = "text"
+capabilities = ["logging", "diagnostics"]
+
+[[tools]]
+name = "network_status"
+description = "Check network connectivity"
+category = "network"
+command = "ip addr"
+requires_sudo = false
+output_format = "text"
+capabilities = ["network", "diagnostics"]
+
+[[tools]]
+name = "cpu_info"
+description = "Get CPU information and usage"
+category = "system"
+command = "lscpu"
+requires_sudo = false
+output_format = "text"
+capabilities = ["monitoring", "hardware"]
+
+[[tools]]
+name = "service_status"
+description = "Check service status"
+category = "system"
+command = "systemctl status"
+requires_sudo = false
+output_format = "text"
+capabilities = ["monitoring", "services"]
+
+[[tools]]
+name = "file_search"
+description = "Search for files by pattern"
+category = "filesystem"
+command = "find"
+requires_sudo = false
+output_format = "text"
+capabilities = ["search", "filesystem"]
+
+[[tools]]
+name = "clean_cache"
+description = "Clean system cache"
+category = "maintenance"
+command = "sync && echo 3 > /proc/sys/vm/drop_caches"
+requires_sudo = true
+output_format = "text"
+capabilities = ["maintenance", "optimization"]
+
+[[tools]]
+name = "backup_create"
+description = "Create system backup"
+category = "maintenance"
+command = "tar -czf"
+requires_sudo = false
+output_format = "text"
+capabilities = ["backup", "maintenance"]

@@ -26,8 +26,12 @@ dist/
 .DS_Store
 Thumbs.db
 
-# Logs
+# Logs and traces
+logs/
 *.log
+*.jsonl
+traces/
+serial*.log
 /tmp/
 
 # Python
@@ -39,6 +43,35 @@ __pycache__/
 env/
 venv/
 .venv/
+*.egg-info/
 
 # Dependencies
 node_modules/
+
+# Checkpoints and models
+rl_checkpoints/
+*.pkl
+*.pth
+*.ckpt
+
+# Project specific
+CARGO_DEPENDENCIES.txt
+REQUIREMENTS_ACTUAL.txt
+ROOT_STRUCTURE_*.txt
+project_snapshot_*.zip
+
+# Temporary files
+*.tmp
+*.bak
+*.cache
+.coverage
+.pytest_cache/
+
+# Documentation builds
+docs/_build/
+docs/site/
+
+# Kernel/OS specific
+*.bin
+*.elf
+serial-output.zip

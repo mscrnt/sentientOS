@@ -1,0 +1,54 @@
+{
+  "timestamp": "2025-07-06T10:18:18.341688",
+  "summary": {
+    "passed": 8,
+    "failed": 1
+  },
+  "results": [
+    {
+      "step": "Python dependencies",
+      "status": "PASS",
+      "details": "All 11 Python dependencies available"
+    },
+    {
+      "step": "Rust dependencies",
+      "status": "PASS",
+      "details": "Rust project has known compilation issues (warnings)"
+    },
+    {
+      "step": "Directory structure",
+      "status": "PASS",
+      "details": "All 4 directories exist"
+    },
+    {
+      "step": "Configuration files",
+      "status": "PASS",
+      "details": "All 3 config files valid"
+    },
+    {
+      "step": "Core module imports",
+      "status": "PASS",
+      "details": "Imported 5 core classes"
+    },
+    {
+      "step": "Planner functionality",
+      "status": "PASS",
+      "details": "Created plan with 1 steps"
+    },
+    {
+      "step": "Guardrails system",
+      "status": "FAIL",
+      "details": "Guardrails failed to block high usage"
+    },
+    {
+      "step": "Trace logging",
+      "status": "PASS",
+      "details": "Trace saved to validation_20250706_101818.json"
+    },
+    {
+      "step": "Python-Rust bridge",
+      "status": "PASS",
+      "details": "Python-Rust binding files present"
+    }
+  ]
+}

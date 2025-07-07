@@ -98,7 +98,7 @@ pub fn toggle_model_trust(model_id: &str, trusted: bool) -> Result<String> {
     let config = get_model_config(model_id)
         .ok_or_else(|| anyhow::anyhow!("Model '{}' not found", model_id))?;
     
-    let action = if trusted { "trust" } else "untrust" };
+    let action = if trusted { "trust" } else { "untrust" };
     
     Ok(format!(
         "⚠️  To {} model '{}', update models.toml:\n\

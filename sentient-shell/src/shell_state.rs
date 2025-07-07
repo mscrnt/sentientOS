@@ -1,5 +1,6 @@
 use crate::ai;
 use crate::commands;
+use crate::commands_functions;
 #[cfg(feature = "local-inference")]
 use crate::inference;
 use crate::package;
@@ -58,11 +59,11 @@ impl ShellState {
 
         match parts[0] {
             "help" => {
-                commands::show_help();
+                commands_functions::show_help();
                 Ok(false)
             }
             "status" => {
-                commands::show_status(&self.ai_client)?;
+                commands_functions::show_status(&self.ai_client)?;
                 Ok(false)
             }
             "ask" => {
@@ -79,12 +80,12 @@ impl ShellState {
                         Err(e) => eprintln!("Boot LLM error: {}", e),
                     }
                 } else {
-                    commands::ask_ai(&mut self.ai_client, &prompt)?;
+                    commands_functions::ask_ai(&mut self.ai_client, &prompt)?;
                 }
                 Ok(false)
             }
             "models" => {
-                commands::list_models(&self.ai_client)?;
+                commands_functions::list_models(&self.ai_client)?;
                 Ok(false)
             }
             "image" => {
@@ -93,15 +94,15 @@ impl ShellState {
                     return Ok(false);
                 }
                 let prompt = parts[1..].join(" ");
-                commands::generate_image(&mut self.ai_client, &prompt)?;
+                commands_functions::generate_image(&mut self.ai_client, &prompt)?;
                 Ok(false)
             }
             "pkg" => {
                 if parts.len() < 2 {
-                    commands::pkg_usage();
+                    commands_functions::pkg_usage();
                     return Ok(false);
                 }
-                commands::handle_pkg_command(&mut self.package_registry, &mut self.ai_client, &parts[1..])?;
+                commands_functions::handle_pkg_command(&mut self.package_registry, &mut self.ai_client, &parts[1..])?;
                 Ok(false)
             }
             "service" => {
@@ -142,11 +143,42 @@ impl ShellState {
                 }
                 Ok(false)
             }
+            "rag_tool" => {
+                let runtime = tokio::runtime::Runtime::new()?;
+                runtime.block_on(crate::commands::rag_tool::handle_command(&parts[1..]))?;
+                Ok(false)
+            }
+            "rl" => {
+                let runtime = tokio::runtime::Runtime::new()?;
+                runtime.block_on(crate::commands::rl_trace::handle_command(&parts[1..]))?;
+                Ok(false)
+            }
+            "sentient" => {
+                if parts.len() < 2 {
+                    println!("Usage: sentient goal <goal description>");
+                    return Ok(false);
+                }
+                if parts[1] == "goal" && parts.len() > 2 {
+                    let goal = parts[2..].join(" ");
+                    let args = crate::commands::sentient_goal::SentientGoalArgs {
+                        goal,
+                        verbose: false,
+                        dry_run: false,
+                        max_steps: 50,
+                        save_trace: false,
+                    };
+                    let runtime = tokio::runtime::Runtime::new()?;
+                    runtime.block_on(crate::commands::sentient_goal::execute(args))?;
+                } else {
+                    println!("Unknown sentient command. Use: sentient goal <goal>");
+                }
+                Ok(false)
+            }
             "exit" => Ok(true),
             _ => {
                 // Check if it's an installed package command
                 if self.package_registry.is_installed(parts[0]) {
-                    commands::run_package(&mut self.ai_client, parts[0], &parts[1..])?;
+                    commands_functions::run_package(&mut self.ai_client, parts[0], &parts[1..])?;
                     Ok(false)
                 } else {
                     println!(

@@ -1,0 +1,155 @@
+{
+  "timestamp": "2025-07-06T08:30:17.382810",
+  "tests": {
+    "python_dep_numpy": {
+      "status": "FAIL",
+      "message": "Scientific computing missing",
+      "details": {}
+    },
+    "python_dep_torch": {
+      "status": "FAIL",
+      "message": "Deep learning framework missing",
+      "details": {}
+    },
+    "python_dep_matplotlib": {
+      "status": "FAIL",
+      "message": "Plotting missing",
+      "details": {}
+    },
+    "python_dep_psutil": {
+      "status": "FAIL",
+      "message": "System monitoring missing",
+      "details": {}
+    },
+    "python_dep_yaml": {
+      "status": "PASS",
+      "message": "YAML parsing available",
+      "details": {}
+    },
+    "python_dep_toml": {
+      "status": "FAIL",
+      "message": "TOML parsing missing",
+      "details": {}
+    },
+    "python_dep_pandas": {
+      "status": "FAIL",
+      "message": "Data analysis missing",
+      "details": {}
+    },
+    "python_dep_sklearn": {
+      "status": "FAIL",
+      "message": "Machine learning missing",
+      "details": {}
+    },
+    "dir_logs": {
+      "status": "PASS",
+      "message": "Directory exists",
+      "details": {}
+    },
+    "dir_config": {
+      "status": "PASS",
+      "message": "Directory exists",
+      "details": {}
+    },
+    "dir_rl_data": {
+      "status": "PASS",
+      "message": "Directory exists",
+      "details": {}
+    },
+    "dir_rl_agent": {
+      "status": "PASS",
+      "message": "Directory exists",
+      "details": {}
+    },
+    "dir_rl_checkpoints": {
+      "status": "PASS",
+      "message": "Directory exists",
+      "details": {}
+    },
+    "dir_sentient-core": {
+      "status": "PASS",
+      "message": "Directory exists",
+      "details": {}
+    },
+    "dir_sentient-shell": {
+      "status": "PASS",
+      "message": "Directory exists",
+      "details": {}
+    },
+    "config_router_config.toml": {
+      "status": "FAIL",
+      "message": "Router configuration invalid: No module named 'toml'",
+      "details": {}
+    },
+    "config_conditions.yaml": {
+      "status": "PASS",
+      "message": "Tool conditions valid",
+      "details": {}
+    },
+    "config_tool_registry.toml": {
+      "status": "FAIL",
+      "message": "Tool registry invalid: No module named 'toml'",
+      "details": {}
+    },
+    "module_SentientPlanner": {
+      "status": "FAIL",
+      "message": "Import error: [Errno 2] No such file or directory: '/mnt/d/Projects/SentientOS/sentient_core/planner/planner.py'",
+      "details": {}
+    },
+    "module_SentientExecutor": {
+      "status": "FAIL",
+      "message": "Import error: [Errno 2] No such file or directory: '/mnt/d/Projects/SentientOS/sentient_core/executor/executor.py'",
+      "details": {}
+    },
+    "module_SentientLoop": {
+      "status": "FAIL",
+      "message": "Import error: [Errno 2] No such file or directory: '/mnt/d/Projects/SentientOS/sentient_core/executor/sentient_loop.py'",
+      "details": {}
+    },
+    "module_GuardrailSystem": {
+      "status": "FAIL",
+      "message": "Import error: [Errno 2] No such file or directory: '/mnt/d/Projects/SentientOS/sentient_core/executor/guardrails.py'",
+      "details": {}
+    },
+    "module_ToolChain": {
+      "status": "FAIL",
+      "message": "Import error: [Errno 2] No such file or directory: '/mnt/d/Projects/SentientOS/sentient_core/executor/tool_chain.py'",
+      "details": {}
+    },
+    "rl_data_train.jsonl": {
+      "status": "PASS",
+      "message": "80 traces found",
+      "details": {}
+    },
+    "rl_data_test.jsonl": {
+      "status": "PASS",
+      "message": "20 traces found",
+      "details": {}
+    },
+    "rust_cargo": {
+      "status": "PASS",
+      "message": "Cargo available: cargo 1.88.0 (873a06493 2025-05-10)",
+      "details": {}
+    },
+    "rust_compilation": {
+      "status": "WARN",
+      "message": "Compilation check skipped due to known issues",
+      "details": {}
+    },
+    "ollama_connection": {
+      "status": "PASS",
+      "message": "Ollama server reachable with DeepSeek model",
+      "details": {}
+    },
+    "goal_planning": {
+      "status": "SKIP",
+      "message": "Skipped due to missing dependencies",
+      "details": {}
+    }
+  },
+  "summary": {
+    "passed": 13,
+    "failed": 14,
+    "warnings": 1
+  }
+}

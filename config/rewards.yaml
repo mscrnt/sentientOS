@@ -1,0 +1,82 @@
+# Reward Policy Definitions for SentientOS RL System
+# These define automatic rewards based on execution outcomes
+
+reward_policies:
+  # Base rewards for successful operations
+  base_rewards:
+    tool_success: 0.5      # Tool executed without errors
+    rag_match: 0.3         # RAG found relevant information
+    fast_execution: 0.2    # Execution completed under threshold
+    user_approval: 1.0     # User explicitly approved result
+    
+  # Penalties for failures
+  penalties:
+    tool_failure: -0.5     # Tool returned non-zero exit code
+    timeout: -0.3          # Execution exceeded time limit
+    no_match: -0.2         # RAG found no relevant information
+    user_rejection: -1.0   # User explicitly rejected result
+    
+  # Bonus rewards for exceptional performance
+  bonuses:
+    perfect_match: 0.3     # RAG confidence > 0.9
+    under_100ms: 0.2       # Very fast execution
+    condition_match: 0.1   # Each condition correctly matched
+    
+  # Time thresholds (milliseconds)
+  time_thresholds:
+    fast: 500
+    normal: 2000
+    slow: 5000
+    
+  # Intent-specific modifiers
+  intent_modifiers:
+    PureQuery:
+      rag_match_weight: 1.5      # RAG is more important for queries
+      tool_success_weight: 0.5   # Tools less important
+    PureAction:
+      rag_match_weight: 0.5      # RAG less important for actions
+      tool_success_weight: 1.5   # Tool success is critical
+    QueryThenAction:
+      balance_bonus: 0.2         # Bonus for successfully combining both
+    ConditionalAction:
+      condition_accuracy: 0.3    # Bonus for correct condition evaluation
+      
+  # Model performance tracking
+  model_rewards:
+    local_model_bonus: 0.1       # Bonus for using local models
+    fallback_penalty: -0.1       # Penalty for falling back to slower models
+    
+  # Learning parameters
+  learning:
+    exploration_bonus: 0.05      # Small bonus for trying new combinations
+    exploitation_threshold: 0.7  # Minimum average reward to prefer a strategy
+    
+# Auto-evaluation rules
+auto_evaluation:
+  - name: tool_exit_code
+    condition: "tool_execution.exit_code == 0"
+    reward: base_rewards.tool_success
+    
+  - name: tool_failure
+    condition: "tool_execution.exit_code != 0"
+    reward: penalties.tool_failure
+    
+  - name: rag_confidence_high
+    condition: "rag_response.confidence > 0.9"
+    reward: bonuses.perfect_match
+    
+  - name: fast_execution
+    condition: "duration_ms < time_thresholds.fast"
+    reward: base_rewards.fast_execution
+    
+  - name: very_fast_execution
+    condition: "duration_ms < 100"
+    reward: bonuses.under_100ms
+    
+  - name: timeout_penalty
+    condition: "duration_ms > time_thresholds.slow"
+    reward: penalties.timeout
+    
+  - name: no_rag_results
+    condition: "rag_response.sources.length == 0"
+    reward: penalties.no_match

@@ -1,0 +1,136 @@
+# SentientOS Intelligent Router Configuration
+# Model routing based on intent and capabilities
+
+[router]
+version = "1.0"
+default_model = "deepseek-v2:16b"
+fallback_chain = ["deepseek-v2:16b", "deepseek-r1:14b", "llama3.2:latest"]
+
+# Model definitions
+[[models]]
+id = "deepseek-v2-primary"
+name = "deepseek-v2:16b"
+url = "http://192.168.69.197:11434"
+provider = "ollama"
+capabilities = ["text_generation", "code_generation", "analysis", "tool_calling"]
+performance_tier = "balanced"
+context_window = 16384
+max_tokens = 4096
+trusted = true
+allow_tool_calls = true
+priority = 10
+is_local = false
+
+[[models]]
+id = "deepseek-r1-14b"
+name = "deepseek-r1:14b"
+url = "http://192.168.69.197:11434"
+provider = "ollama"
+capabilities = ["text_generation", "reasoning", "analysis"]
+performance_tier = "balanced"
+context_window = 8192
+max_tokens = 2048
+trusted = true
+allow_tool_calls = true
+priority = 8
+is_local = false
+
+[[models]]
+id = "deepseek-r1-32b"
+name = "deepseek-r1:32b"
+url = "http://192.168.69.197:11434"
+provider = "ollama"
+capabilities = ["text_generation", "complex_reasoning", "analysis"]
+performance_tier = "powerful"
+context_window = 32768
+max_tokens = 8192
+trusted = true
+allow_tool_calls = false  # Too heavy for quick tool calls
+priority = 6
+is_local = false
+
+[[models]]
+id = "qwen-coder"
+name = "dagbs/qwen2.5-coder-14b-instruct-abliterated:q6_k_l"
+url = "http://192.168.69.197:11434"
+provider = "ollama"
+capabilities = ["code_generation", "debugging", "refactoring"]
+performance_tier = "specialized"
+context_window = 8192
+max_tokens = 4096
+trusted = true
+allow_tool_calls = false
+priority = 7
+is_local = false
+
+[[models]]
+id = "llama3-fallback"
+name = "llama3.2:latest"
+url = "http://192.168.69.197:11434"
+provider = "ollama"
+capabilities = ["text_generation", "general_knowledge"]
+performance_tier = "fast"
+context_window = 4096
+max_tokens = 1024
+trusted = true
+allow_tool_calls = true
+priority = 5
+is_local = false
+
+[[models]]
+id = "phi2-local"
+name = "phi2"
+url = "local"
+provider = "candle"
+capabilities = ["text_generation", "tool_calling"]
+performance_tier = "fast"
+context_window = 2048
+max_tokens = 512
+trusted = true
+allow_tool_calls = true
+priority = 3
+is_local = true
+safety_notes = "Local model for offline/fast operations"
+
+# Intent-based routing rules
+[[routing_rules]]
+intent = "ToolCall"
+preferred_models = ["deepseek-v2:16b", "deepseek-r1:14b", "llama3.2:latest"]
+require_capability = "tool_calling"
+performance_tier = "fast"
+
+[[routing_rules]]
+intent = "CodeGeneration"
+preferred_models = ["dagbs/qwen2.5-coder-14b-instruct-abliterated:q6_k_l", "deepseek-v2:16b"]
+require_capability = "code_generation"
+performance_tier = "specialized"
+
+[[routing_rules]]
+intent = "Analysis"
+preferred_models = ["deepseek-r1:32b", "deepseek-v2:16b", "deepseek-r1:14b"]
+require_capability = "analysis"
+performance_tier = "powerful"
+
+[[routing_rules]]
+intent = "GeneralKnowledge"
+preferred_models = ["deepseek-v2:16b", "llama3.2:latest"]
+require_capability = "text_generation"
+performance_tier = "balanced"
+
+[[routing_rules]]
+intent = "Reasoning"
+preferred_models = ["deepseek-r1:32b", "deepseek-r1:14b", "deepseek-v2:16b"]
+require_capability = "reasoning"
+performance_tier = "powerful"
+
+# Embedder configuration for RAG
+[embedder]
+model = "dengcao/Qwen3-Embedding-8B:Q8_0"
+url = "http://192.168.69.197:11434"
+provider = "ollama"
+
+# Reranker configuration for RAG
+[reranker]
+model = "dengcao/Qwen3-Reranker-8B:Q5_K_M"
+url = "http://192.168.69.197:11434"
+provider = "ollama"

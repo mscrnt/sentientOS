@@ -66,6 +66,18 @@ regex = "1.5"
 # Process management
 which = "6.0"
 
+# Python embedding
+pyo3 = { version = "0.20", features = ["auto-initialize"] }
+
+# Terminal colors
+colored = "2.0"
+
+# UUID generation
+uuid = { version = "1.0", features = ["v4"] }
+
+# Terminal detection
+atty = "0.2"
+
 
 # Unix-specific features
 [target.'cfg(unix)'.dependencies]
