@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  sentientos:
+    build: .
+    image: sentientos:latest
+    container_name: sentientos-runtime
+    
+    # Persistent volumes
+    volumes:
+      - ./logs:/sentientos/logs
+      - ./traces:/sentientos/traces
+      - ./rl_checkpoints:/var/rl_checkpoints
+      - ./config:/sentientos/config:ro
+      - ./scripts:/sentientos/scripts:ro
+      - ./sentient-shell:/sentientos/sentient-shell:ro
+      
+    # Environment
+    environment:
+      - OLLAMA_URL=${OLLAMA_URL:-http://192.168.69.197:11434}
+      - SD_URL=${SD_URL:-http://192.168.69.197:7860}
+      - SENTIENT_MODE=${SENTIENT_MODE:-service}
+      - GOAL_INTERVAL=${GOAL_INTERVAL:-5}
+      - RUST_LOG=${RUST_LOG:-info}
+      # RL-specific settings
+      - RL_AGENT=${RL_AGENT:-ppo}
+      - RL_ENV=${RL_ENV:-goal-task}
+      - RL_EPISODES=${RL_EPISODES:-1000}
+      
+    # Networking
+    ports:
+      - "8080:8080"  # Monitoring dashboard
+      - "8081:8081"  # RL dashboard
+      - "8082:8082"  # Additional services
+    
+    # Runtime options
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    
+    # Start with service manager
+    command: ["/sentientos/scripts/start_integrated.sh"]
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 2G
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "goal_processor|sentient-shell"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

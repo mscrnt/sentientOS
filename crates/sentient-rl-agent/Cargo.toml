@@ -1,0 +1,55 @@
+[package]
+name = "sentient-rl-agent"
+version = "0.1.0"
+edition = "2021"
+authors = ["SentientOS Contributors"]
+description = "Reinforcement learning agents implementation for SentientOS"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/mscrrnt/sentientos"
+readme = "README.md"
+keywords = ["reinforcement-learning", "agent", "ai", "dqn", "ppo"]
+categories = ["science", "algorithms"]
+
+[dependencies]
+# Internal dependencies
+sentient-rl-core = { path = "../sentient-rl-core" }
+
+# Core dependencies
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Neural network support
+tch = { version = "0.13", optional = true }
+candle = { version = "0.3", optional = true }
+
+# Math and numerical computation
+ndarray = { version = "0.15", features = ["serde"] }
+rand = "0.8"
+rand_distr = "0.4"
+statrs = "0.16"
+
+# Async runtime
+tokio = { version = "1.36", features = ["full"] }
+async-trait = "0.1"
+
+# Logging and metrics
+tracing = "0.1"
+metrics = "0.21"
+prometheus = { version = "0.13", optional = true }
+
+# Data structures
+dashmap = "5.5"
+indexmap = "2.1"
+
+[features]
+default = ["torch"]
+torch = ["tch"]
+candle-backend = ["candle"]
+metrics = ["prometheus"]
+
+[dev-dependencies]
+tokio-test = "0.4"
+criterion = "0.5"
+approx = "0.5"

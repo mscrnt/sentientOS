@@ -15,7 +15,9 @@ pub mod package;
 #[cfg(feature = "serial")]
 pub mod serial;
 pub mod service;
+pub mod services;
 pub mod validated_exec;
+pub mod web_ui;
 pub mod schema;
 pub mod boot_llm;
 pub mod rag;

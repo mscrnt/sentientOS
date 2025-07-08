@@ -49,6 +49,12 @@ pub fn handle_command(args: &[&str]) -> Result<String> {
             manager.init()?;
             Ok("Service manager initialized".to_string())
         },
+        "run" => {
+            if args.len() < 2 {
+                return Ok("Usage: service run <name>".to_string());
+            }
+            run_service(args[1])
+        },
         _ => Ok(help()),
     }
 }
@@ -64,8 +70,22 @@ Commands:
   service restart <name>    Restart a service
   service logs <name> [n]   Show last n log lines (default: 20)
   service init             Initialize service manager
+  service run <name>        Run a service directly (for service mode)
 
 Services are configured in TOML files at /etc/sentient/services/"#.to_string()
+}
+
+/// Run a service directly (used when shell is launched in service mode)
+fn run_service(name: &str) -> Result<String> {
+    use crate::services::ServiceRunner;
+    use tokio::runtime::Runtime;
+    
+    let rt = Runtime::new()?;
+    rt.block_on(async {
+        ServiceRunner::run_service(name).await
+    })?;
+    
+    Ok(format!("Service {} completed", name))
 }
 
 fn list_services(manager: &ServiceManager) -> Result<String> {

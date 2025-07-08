@@ -1,0 +1,44 @@
+# Activity Loop Service Configuration
+# Migrated from fast_goal_processor.py
+
+[service]
+name = "activity-loop"
+display_name = "Activity Loop Service"
+description = "Processes goals every 5 seconds with command execution and reward calculation"
+type = "native"
+enabled = true
+
+[service.config]
+# Check interval in milliseconds (5 seconds)
+check_interval_ms = 5000
+
+# Heartbeat interval in milliseconds (60 seconds)
+heartbeat_interval_ms = 60000
+
+# Logs directory
+logs_dir = "logs"
+
+[service.dependencies]
+# No hard dependencies, but works well with goal-processor
+soft = ["goal-processor"]
+
+[service.resources]
+# Resource limits
+max_memory = "256MB"
+max_cpu = "10%"
+
+[service.logging]
+# Log level for this service
+level = "info"
+# Log to file
+file = "logs/activity-loop.log"
+# Also log to stdout
+stdout = true
+
+[service.monitoring]
+# Health check endpoint
+health_check_enabled = true
+health_check_interval = 30
+# Metrics collection
+metrics_enabled = true
+metrics_interval = 60

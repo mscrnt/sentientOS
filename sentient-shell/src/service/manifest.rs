@@ -179,6 +179,62 @@ impl ManifestLoader {
 
             self.save_service(&ai_router_config)?;
         }
+        
+        // Create activity loop service manifest
+        let activity_loop_path = self.config_dir.join("activity-loop.toml");
+        if !activity_loop_path.exists() {
+            let activity_loop_config = ServiceConfig {
+                service: ServiceDefinition {
+                    name: "activity-loop".to_string(),
+                    command: "sentient-shell".to_string(),
+                    args: vec!["service".to_string(), "run".to_string(), "activity-loop".to_string()],
+                    autostart: true,
+                    restart: RestartPolicy::Always,
+                    restart_delay_ms: 5000,
+                    working_directory: None,
+                    user: None,
+                    health_check: Some(HealthCheckConfig {
+                        command: "pgrep -f activity-loop".to_string(),
+                        interval_ms: 30000,
+                        timeout_ms: 5000,
+                        retries: 3,
+                    }),
+                },
+                environment: vec![
+                    ("GOAL_INTERVAL_MS".to_string(), "5000".to_string()),
+                    ("HEARTBEAT_INTERVAL_MS".to_string(), "60000".to_string()),
+                    ("RUST_LOG".to_string(), "info".to_string()),
+                ],
+                dependencies: vec![],
+            };
+
+            self.save_service(&activity_loop_config)?;
+        }
+        
+        // Create LLM observer service manifest
+        let llm_observer_path = self.config_dir.join("llm-observer.toml");
+        if !llm_observer_path.exists() {
+            let llm_observer_config = ServiceConfig {
+                service: ServiceDefinition {
+                    name: "llm-observer".to_string(),
+                    command: "sentient-shell".to_string(),
+                    args: vec!["service".to_string(), "run".to_string(), "llm-observer".to_string()],
+                    autostart: true,
+                    restart: RestartPolicy::OnFailure,
+                    restart_delay_ms: 10000,
+                    working_directory: None,
+                    user: None,
+                    health_check: None,
+                },
+                environment: vec![
+                    ("OLLAMA_URL".to_string(), "http://192.168.69.197:11434".to_string()),
+                    ("LLM_INTERVAL_MS".to_string(), "30000".to_string()),
+                ],
+                dependencies: vec!["activity-loop".to_string()],
+            };
+
+            self.save_service(&llm_observer_config)?;
+        }
 
         Ok(())
     }

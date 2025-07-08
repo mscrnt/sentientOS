@@ -1,0 +1,43 @@
+[workspace]
+members = [
+    "sentient-rl-core",
+    "sentient-rl-agent",
+    "sentient-rl-env",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["SentientOS Contributors"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/mscrrnt/sentientos"
+
+[workspace.dependencies]
+# Internal crates
+sentient-rl-core = { path = "sentient-rl-core" }
+sentient-rl-agent = { path = "sentient-rl-agent" }
+sentient-rl-env = { path = "sentient-rl-env" }
+
+# Common dependencies
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+anyhow = "1.0"
+tokio = { version = "1.36", features = ["full"] }
+async-trait = "0.1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+rand = "0.8"
+rand_distr = "0.4"
+ndarray = { version = "0.15", features = ["serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.6", features = ["v4", "serde"] }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+
+[profile.bench]
+inherits = "release"

@@ -1,0 +1,22 @@
+[service]
+name = "goal-processor"
+command = "sentient-shell"
+args = ["service", "run", "goal-processor"]
+autostart = true
+restart = "always"
+restart_delay_ms = 5000
+working_directory = "/sentientos"
+
+[service.health_check]
+command = "ps aux | grep goal-processor | grep -v grep"
+interval_ms = 30000
+timeout_ms = 5000
+retries = 3
+
+[environment]
+GOAL_INTERVAL_MS = "5000"
+HEARTBEAT_INTERVAL_MS = "60000"
+RUST_LOG = "info"
+
+# No dependencies - this is a base service
+dependencies = []

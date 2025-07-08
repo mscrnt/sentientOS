@@ -78,6 +78,15 @@ uuid = { version = "1.0", features = ["v4"] }
 # Terminal detection
 atty = "0.2"
 
+# Async trait
+async-trait = "0.1"
+
+# Web framework
+warp = "0.3"
+
+# System info
+sysinfo = "0.30"
+
 
 # Unix-specific features
 [target.'cfg(unix)'.dependencies]
