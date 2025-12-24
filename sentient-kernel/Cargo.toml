@@ -12,7 +12,7 @@ uefi = { version = "0.20", features = ["alloc"] }
 # uefi-services = "0.17" # Conflicts with our allocator
 log = { version = "0.4", default-features = false }
 spin = "0.9"
-x86_64 = "0.14"
+x86_64 = "0.15"
 linked_list_allocator = "0.10"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
